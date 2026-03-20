@@ -9,3 +9,90 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
+enum ROLE {
+  STUDENT
+  CARETAKER
+  SUPERVISOR
+}
+
+enum PRIORITY {
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum STATUS {
+  PENDING
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+enum RESOLUTION_STATUS {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model User {
+  id                 String       @id @default(cuid())
+  name               String
+  email              String       @unique
+  password           String
+  role               ROLE         @default(STUDENT)
+  points             Int          @default(0)
+  complaints         Complaint[]  @relation("UserComplaints")
+  assignedComplaints Complaint[]  @relation("AssignedComplaints")
+  resolutions        Resolution[]
+  comments           Comment[]
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+}
+
+model Complaint {
+  id           String       @id @default(cuid())
+  title        String
+  description  String
+  media        String[]     @default([])
+  priority     PRIORITY
+  status       STATUS       @default(PENDING)
+  upvotes      Int          @default(0)
+  userId       String
+  user         User         @relation("UserComplaints", fields: [userId], references: [id])
+  assignedToId String?
+  assignedTo   User?        @relation("AssignedComplaints", fields: [assignedToId], references: [id])
+  deadline     DateTime?
+  commentList  Comment[]
+  resolutions  Resolution[]
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  @@index([userId, assignedToId])
+}
+
+model Comment {
+  id          String    @id @default(cuid())
+  description String
+  complaintId String
+  complaint   Complaint @relation(fields: [complaintId], references: [id])
+  userId      String
+  user        User      @relation(fields: [userId], references: [id])
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([userId, complaintId])
+}
+
+model Resolution {
+  id          String            @id @default(cuid())
+  description String
+  media       String[]
+  complaintId String
+  complaint   Complaint         @relation(fields: [complaintId], references: [id])
+  caretakerId String
+  caretaker   User              @relation(fields: [caretakerId], references: [id])
+  status      RESOLUTION_STATUS @default(PENDING)
+  createdAt   DateTime          @default(now())
+
+  @@index([complaintId, caretakerId])
+}
