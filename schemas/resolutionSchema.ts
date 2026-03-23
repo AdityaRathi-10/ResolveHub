@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { RESOLUTION_STATUS } from "../app/generated/prisma/enums";
 
-export const complaintSchema = z
+export const resolutionSchema = z
   .object({
     description: z.string().min(10).max(500).optional(),
     media: z.array(z.url()).optional(),

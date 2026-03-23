@@ -52,9 +52,9 @@ model User {
 model Complaint {
   id           String       @id @default(cuid())
   title        String
-  description  String
+  description  String?
   media        String[]     @default([])
-  priority     PRIORITY
+  priority     PRIORITY     @default(LOW)
   status       STATUS       @default(PENDING)
   upvotes      Int          @default(0)
   userId       String
@@ -85,8 +85,8 @@ model Comment {
 
 model Resolution {
   id          String            @id @default(cuid())
-  description String
-  media       String[]
+  description String?
+  media       String[]          @default([])
   complaintId String
   complaint   Complaint         @relation(fields: [complaintId], references: [id])
   caretakerId String
