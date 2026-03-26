@@ -36,18 +36,23 @@ export const authOptions: NextAuthOptions = {
                         throw new Error("Invalid password")
                     }
                     return user
-                } catch (error) {
-                    throw new Error("Error")
+                } catch (error: any) {
+                    throw new Error(error.message)
                 }
             },
         })
     ],
     callbacks: {
         async session({ session, token }) {
+            if(token) {
+                session.user.role = token.role
+            }
             return session
         },
         async jwt({ token, user }) {
-            console.log("user", user)
+            if(user) {
+                token.role = user.role
+            }
             return token
         }
     },
@@ -55,7 +60,8 @@ export const authOptions: NextAuthOptions = {
         signIn: "/sign-in"
     },
     session: {
-        strategy: "jwt"
+        strategy: "jwt",
+        maxAge: 24 * 60 * 60
     },
     secret: process.env.NEXTAUTH_SECRET,
 }
