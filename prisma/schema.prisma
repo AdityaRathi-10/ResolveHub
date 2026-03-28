@@ -47,6 +47,7 @@ model User {
   comments           Comment[]
   createdAt          DateTime     @default(now())
   updatedAt          DateTime     @updatedAt
+  upvotes            Upvotes[]
 }
 
 model Complaint {
@@ -56,12 +57,14 @@ model Complaint {
   media        String[]     @default([])
   priority     PRIORITY     @default(LOW)
   status       STATUS       @default(PENDING)
-  upvotes      Int          @default(0)
+  upvotesCount Int          @default(0)
   userId       String
   user         User         @relation("UserComplaints", fields: [userId], references: [id])
   assignedToId String?
   assignedTo   User?        @relation("AssignedComplaints", fields: [assignedToId], references: [id])
   deadline     DateTime?
+  isEscalated  Boolean      @default(false)
+  upvotes      Upvotes[]
   commentList  Comment[]
   resolutions  Resolution[]
   createdAt    DateTime     @default(now())
@@ -80,7 +83,7 @@ model Comment {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
-  @@index([userId, complaintId])
+  @@unique([userId, complaintId])
 }
 
 model Resolution {
@@ -94,5 +97,15 @@ model Resolution {
   status      RESOLUTION_STATUS @default(PENDING)
   createdAt   DateTime          @default(now())
 
-  @@index([complaintId, caretakerId])
+  @@unique([complaintId, caretakerId])
+}
+
+model Upvotes {
+  id          String    @id @default(cuid())
+  userId      String
+  complaintId String
+  user        User      @relation(fields: [userId], references: [id])
+  complaint   Complaint @relation(fields: [complaintId], references: [id])
+
+  @@unique([userId, complaintId])
 }
