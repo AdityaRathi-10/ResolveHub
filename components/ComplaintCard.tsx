@@ -11,7 +11,9 @@ import {
     Paperclip,
     CalendarClock,
     UserCheck,
+    TrendingUp,
 } from "lucide-react"
+import { escalateComplaints } from "@/lib/escalateComplaint"
 
 export type ComplaintCardData = {
     id: string
@@ -19,7 +21,7 @@ export type ComplaintCardData = {
     description?: string | null
     priority: "HIGH" | "MEDIUM" | "LOW"
     status: "PENDING" | "IN_PROGRESS" | "RESOLVED" | "CLOSED"
-    upvotes: number
+    upvotesCount: number
     media: string[]
     deadline?: Date | null
     createdAt: Date
@@ -27,11 +29,14 @@ export type ComplaintCardData = {
         name: string
         email: string
     }
+    isEscalated: boolean
     // assignedTo?: {
     //     name: string
     // } | null
-    commentList: number[]
-    resolutions: number[]
+    _count: {
+        commentList: number
+        resolutions: number
+    }
 }
 
 const PRIORITY_CONFIG = {
@@ -79,16 +84,12 @@ const STATUS_CONFIG = {
     },
 }
 
-export function ComplaintCard({complaint}: {complaint: ComplaintCardData}) {
+export async function ComplaintCard({complaint}: {complaint: ComplaintCardData}) {
     const priority = PRIORITY_CONFIG[complaint.priority]
     const status = STATUS_CONFIG[complaint.status]
     const StatusIcon = status.icon
 
-    const isOverdue =
-        complaint.deadline &&
-        new Date(complaint.deadline) < new Date() &&
-        complaint.status !== "RESOLVED" &&
-        complaint.status !== "CLOSED"
+    await escalateComplaints()
 
     const initials = complaint.user.name
         .split(" ")
@@ -107,6 +108,12 @@ export function ComplaintCard({complaint}: {complaint: ComplaintCardData}) {
                 <div className="pl-3">
                     {/* Top row: status + priority + time */}
                     <div className="flex items-center justify-between gap-2 mb-3">
+                        { complaint.isEscalated && 
+                            <div className={`inline-flex items-center gap-1.5 text-xs font-medium px-2 py-1 rounded-lg bg-purple-200 text-purple-800`}>
+                                <TrendingUp className="h-3 w-3" />
+                                Escalated
+                            </div>
+                        }
                         <div className={`inline-flex items-center gap-1.5 text-xs font-medium px-2 py-1 rounded-lg ${status.bg} ${status.class}`}>
                             <StatusIcon className="h-3 w-3" />
                             {status.label}
@@ -139,13 +146,13 @@ export function ComplaintCard({complaint}: {complaint: ComplaintCardData}) {
                     )}
 
                     {/* Deadline warning */}
-                    {isOverdue && (
+                    {complaint.isEscalated && (
                         <div className="flex items-center gap-1.5 text-xs text-red-500 mb-3">
                             <AlertCircle className="h-3.5 w-3.5" />
                             Overdue · {complaint.deadline?.toLocaleString()}
                         </div>
                     )}
-                    {complaint.deadline && !isOverdue && (
+                    {complaint.deadline && !complaint.isEscalated && (
                         <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-3">
                             <CalendarClock className="h-3.5 w-3.5" />
                             Due {complaint.deadline?.toLocaleString()}
@@ -182,11 +189,11 @@ export function ComplaintCard({complaint}: {complaint: ComplaintCardData}) {
                             )}
                             <span className="flex items-center gap-1">
                                 <MessageSquare className="h-3.5 w-3.5" />
-                                {complaint.commentList.length}
+                                {complaint._count.commentList}
                             </span>
                             <span className="flex items-center gap-1">
                                 <ChevronUp className="h-3.5 w-3.5" />
-                                {complaint.upvotes}
+                                {complaint.upvotesCount}
                             </span>
                         </div>
                     </div>
