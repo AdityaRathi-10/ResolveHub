@@ -21,7 +21,7 @@ export default async function createComplaintAction(data: z.infer<typeof complai
 
     try {
         const createdAt = new Date()
-        const deadline = calculateDeadline(priority!, createdAt)
+        const deadline = calculateDeadline(priority ? priority : "LOW", createdAt)
     
         await prisma.complaint.create({
             data: {
@@ -32,7 +32,7 @@ export default async function createComplaintAction(data: z.infer<typeof complai
                 deadline,
                 user: {
                     connect: {
-                        id: "cmn6durb20000vk3g7hbi2c0d"
+                        id: session.user.id
                     }
                 }
             }
