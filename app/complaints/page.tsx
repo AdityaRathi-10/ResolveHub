@@ -1,19 +1,21 @@
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/app/api/auth/[...nextauth]/options"
 import { redirect } from "next/navigation"
-import { ComplaintCard, ComplaintCardData } from "@/components/ComplaintCard"
+import { ComplaintCard } from "@/components/ComplaintCard"
 import { Plus, SlidersHorizontal, Clock, CheckCircle2, Loader2, TrendingUp } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select"
 import { prisma } from "@/lib/prisma"
+import Filters from "@/components/Filters"
+
+interface ComplaintsPageProps {
+    searchParams: Promise<{
+        status?: string
+        priority?: string
+        sort?: string
+    }>
+}
 
 function StatPill({
     label,
@@ -41,22 +43,49 @@ function StatPill({
     )
 }
 
-export default async function ComplaintsPage() {
+export default async function ComplaintsPage({ searchParams }: ComplaintsPageProps) {
     const session = await getServerSession(authOptions)
     if (!session?.user) redirect("/sign-in")
 
+    const { status, priority, sort } = await searchParams
+    const activeStatus = status ?? "all"
+
     const role = session.user.role as "STUDENT" | "CARETAKER" | "SUPERVISOR"
-    const complaints = await prisma.complaint.findMany()
-    const complaintsWithUser = complaints.map((complaint) => {
-        return { 
-            ...complaint,
-            user: { 
-                name: session.user.name ?? "Unknown",
-                email: session.user.email ?? "Unknown" 
-            },
-            commentList: [],
-            resolutions: [],
+    const where: any = {}
+
+    if (status && status !== "All") {
+        where.status = status.replaceAll(" ", "_").toUpperCase()
+    }
+
+    if (priority && priority !== "All") {
+        where.priority = priority.toUpperCase()
+    }
+
+    const orderBy: any = {}
+
+    if (sort === "newest") orderBy.createdAt = "desc"
+    if (sort === "oldest") orderBy.createdAt = "asc"
+    if (sort === "upvotes") orderBy.upvotes = "desc"
+
+    const complaints = await prisma.complaint.findMany({
+        where,
+        orderBy,
+        include: {
+            user: true,
+            assignedTo: true,
+            _count: {
+                select: {
+                    commentList: true,
+                    resolutions: true,
+                }
+            }
         }
+    })
+
+    const filterComplaints = complaints.filter((complaint) => {
+        const stat = activeStatus?.replaceAll(" ", "_").toUpperCase();
+        if (activeStatus === "all") return complaints
+        return complaint.status === stat
     })
 
     const stats = {
@@ -83,8 +112,8 @@ export default async function ComplaintsPage() {
                             {role === "STUDENT"
                                 ? "Your submitted complaints"
                                 : role === "CARETAKER"
-                                ? "Complaints assigned to you"
-                                : "All complaints across the system"}
+                                    ? "Complaints assigned to you"
+                                    : "All complaints across the system"}
                         </p>
                     </div>
 
@@ -107,49 +136,7 @@ export default async function ComplaintsPage() {
                 </div>
 
                 {/* Filters */}
-                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mb-5">
-                    {/* Status tabs */}
-                    <div className="flex items-center gap-1 bg-muted/50 p-1 rounded-xl border border-border flex-wrap">
-                        {["All", "Pending", "In Progress", "Resolved", "Closed"].map((tab, i) => (
-                            <button
-                                key={tab}
-                                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-150 ${
-                                    i === 0
-                                        ? "bg-background text-foreground shadow-sm border border-border"
-                                        : "text-muted-foreground hover:text-foreground"
-                                }`}
-                            >
-                                {tab}
-                            </button>
-                        ))}
-                    </div>
-
-                    <div className="flex items-center gap-2 sm:ml-auto">
-                        <Select>
-                            <SelectTrigger className="h-9 w-32.5 text-xs rounded-xl">
-                                <SelectValue placeholder="Priority" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">All priorities</SelectItem>
-                                <SelectItem value="HIGH">High</SelectItem>
-                                <SelectItem value="MEDIUM">Medium</SelectItem>
-                                <SelectItem value="LOW">Low</SelectItem>
-                            </SelectContent>
-                        </Select>
-
-                        <Select>
-                            <SelectTrigger className="h-9 w-32.5 text-xs rounded-xl">
-                                <SelectValue placeholder="Sort by" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="newest">Newest first</SelectItem>
-                                <SelectItem value="oldest">Oldest first</SelectItem>
-                                <SelectItem value="upvotes">Most upvoted</SelectItem>
-                                <SelectItem value="priority">Priority</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-                </div>
+                <Filters activeStatus={activeStatus} />
 
                 {/* Count */}
                 <div className="flex items-center gap-2 mb-4">
@@ -164,14 +151,14 @@ export default async function ComplaintsPage() {
                 </div>
 
                 {/* Grid */}
-                {complaintsWithUser.length > 0 ? (
+                {filterComplaints.length > 0 ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-                        {complaintsWithUser.map((complaint) => (
+                        {filterComplaints.map((complaint) => (
                             <ComplaintCard key={complaint.id} complaint={complaint} />
                         ))}
                     </div>
                 ) : (
-                    <div className="flex flex-col items-center justify-center py-24 text-center">
+                    <div className="flex flex-col items-center justify-center text-center">
                         <div className="h-14 w-14 rounded-2xl bg-muted flex items-center justify-center mb-4">
                             <SlidersHorizontal className="h-6 w-6 text-muted-foreground" />
                         </div>
@@ -179,18 +166,8 @@ export default async function ComplaintsPage() {
                             No complaints found
                         </h3>
                         <p className="text-sm text-muted-foreground max-w-xs">
-                            {role === "STUDENT"
-                                ? "You haven't submitted any complaints yet."
-                                : "No complaints match your current filters."}
+                            No complaints match your current filters.
                         </p>
-                        {role === "STUDENT" && (
-                            <Button asChild size="sm" className="mt-5">
-                                <Link href="/complaints/new">
-                                    <Plus className="h-4 w-4 mr-2" />
-                                    Submit your first complaint
-                                </Link>
-                            </Button>
-                        )}
                     </div>
                 )}
             </div>
