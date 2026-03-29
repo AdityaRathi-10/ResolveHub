@@ -14,6 +14,7 @@ import {
     TrendingUp,
 } from "lucide-react"
 import { escalateComplaints } from "@/lib/escalateComplaint"
+import { formatDistanceToNowStrict } from "date-fns"
 
 export type ComplaintCardData = {
     id: string
@@ -125,7 +126,7 @@ export async function ComplaintCard({complaint}: {complaint: ComplaintCardData})
                                 {priority.label}
                             </span>
                             <span className="text-xs text-muted-foreground hidden sm:block">
-                                {complaint.createdAt.toLocaleString()}
+                                {formatDistanceToNowStrict(new Date(complaint.createdAt), { addSuffix: true })}
                             </span>
                         </div>
                     </div>

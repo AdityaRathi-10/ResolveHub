@@ -108,13 +108,6 @@ export default async function ComplaintsPage({ searchParams }: ComplaintsPagePro
                         >
                             Complaints
                         </h1>
-                        <p className="text-sm text-muted-foreground mt-0.5">
-                            {role === "STUDENT"
-                                ? "Your submitted complaints"
-                                : role === "CARETAKER"
-                                    ? "Complaints assigned to you"
-                                    : "All complaints across the system"}
-                        </p>
                     </div>
 
                     {role === "STUDENT" && (

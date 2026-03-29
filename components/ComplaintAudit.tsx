@@ -10,6 +10,7 @@ import {
     RotateCcw,
     GitCommitHorizontal,
 } from "lucide-react"
+import { format, formatDistanceToNow, formatDistanceToNowStrict } from "date-fns"
 
 // Types
 
@@ -121,8 +122,14 @@ function AuditRow({
 
                 {/* Timestamp */}
                 <div className="flex items-center gap-2 mt-1">
+                    <span
+                        className="text-xs text-muted-foreground/70"
+                    >
+                        {formatDistanceToNowStrict(new Date(entry.createdAt), { addSuffix: true })}
+                    </span>
+                    <span className="text-muted-foreground/30 text-xs">·</span>
                     <span className="text-xs text-muted-foreground/50">
-                        {entry.createdAt.toLocaleString()}
+                        {format(new Date(entry.createdAt), "MMM d, yyyy 'at' h:mm a")}
                     </span>
                 </div>
             </div>

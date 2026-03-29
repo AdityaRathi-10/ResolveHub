@@ -25,6 +25,7 @@ import { revalidatePath } from "next/cache"
 import UpVotes from "@/components/Upvotes"
 import ComplaintActivityButton from "@/components/ComplaintActivityButton"
 import ComplaintAudit from "@/components/ComplaintAudit"
+import { format ,formatDistanceToNowStrict } from "date-fns"
 
 type Priority = "HIGH" | "MEDIUM" | "LOW"
 type Status = "PENDING" | "IN_PROGRESS" | "RESOLVED" | "CLOSED"
@@ -112,7 +113,7 @@ function CommentItem({ comment }: { comment: ComplaintDetail["commentList"][numb
                 <div className="flex items-baseline gap-2 mb-1">
                     <span className="text-sm font-medium text-foreground">{comment.user.name}</span>
                     <span className="text-xs text-muted-foreground">
-                        {comment.createdAt.toLocaleString()}
+                        {formatDistanceToNowStrict(new Date(comment.createdAt), { addSuffix: true })}
                     </span>
                 </div>
                 <p className="text-sm text-foreground/80 leading-relaxed">{comment.description}</p>
@@ -147,7 +148,7 @@ function ResolutionCard({ resolution }: { resolution: ComplaintDetail["resolutio
                 </div>
             )}
             <p className="text-xs text-muted-foreground mt-3">
-                Submitted {resolution.createdAt.toLocaleString()}
+                Submitted {formatDistanceToNowStrict(new Date(resolution.createdAt), { addSuffix: true })}
             </p>
         </div>
     )
