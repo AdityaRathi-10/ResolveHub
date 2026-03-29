@@ -1,0 +1,197 @@
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/app/api/auth/[...nextauth]/options"
+import { prisma } from "@/lib/prisma"
+import {
+    UserPlus,
+    UserMinus,
+    RefreshCw,
+    TrendingUp,
+    ShieldCheck,
+    RotateCcw,
+    GitCommitHorizontal,
+} from "lucide-react"
+
+// Types
+
+type AuditType =
+    | "ASSIGNED"
+    | "UNASSIGNED"
+    | "STATUS_CHANGED"
+    | "ESCALATED"
+    | "RESOLUTION_SUBMITTED"
+    | "REOPENED"
+
+type AuditEntry = {
+    id: string
+    type: AuditType
+    message: string
+    createdAt: Date
+    actor: {
+        name: string
+        email: string
+    }
+}
+
+// Per-event config
+
+const AUDIT_CONFIG: Record<
+    AuditType,
+    {
+        icon: React.ElementType
+        iconBg: string
+        iconColor: string
+        label: string
+    }
+> = {
+    ASSIGNED: {
+        icon: UserPlus,
+        iconBg: "bg-blue-500/10 border-blue-500/20",
+        iconColor: "text-blue-500",
+        label: "Assigned",
+    },
+    UNASSIGNED: {
+        icon: UserMinus,
+        iconBg: "bg-slate-400/10 border-slate-400/20",
+        iconColor: "text-slate-400",
+        label: "Unassigned",
+    },
+    STATUS_CHANGED: {
+        icon: RefreshCw,
+        iconBg: "bg-violet-500/10 border-violet-500/20",
+        iconColor: "text-violet-500",
+        label: "Status changed",
+    },
+    ESCALATED: {
+        icon: TrendingUp,
+        iconBg: "bg-red-500/10 border-red-500/20",
+        iconColor: "text-red-500",
+        label: "Escalated",
+    },
+    RESOLUTION_SUBMITTED: {
+        icon: ShieldCheck,
+        iconBg: "bg-emerald-500/10 border-emerald-500/20",
+        iconColor: "text-emerald-500",
+        label: "Resolution submitted",
+    },
+    REOPENED: {
+        icon: RotateCcw,
+        iconBg: "bg-amber-500/10 border-amber-500/20",
+        iconColor: "text-amber-500",
+        label: "Reopened",
+    },
+}
+
+// Single event row
+
+function AuditRow({
+    entry,
+    isLast,
+}: {
+    entry: AuditEntry
+    isLast: boolean
+}) {
+    const config = AUDIT_CONFIG[entry.type]
+    const Icon = config.icon
+
+    return (
+        <div className="relative flex gap-4">
+            {/* Vertical timeline line */}
+            {!isLast && (
+                <div className="absolute left-3.75 top-8 bottom-0 w-px bg-border" />
+            )}
+
+            {/* Icon node */}
+            <div className={`relative z-10 h-8 w-8 shrink-0 rounded-full border flex items-center justify-center ${config.iconBg}`}>
+                <Icon className={`h-3.5 w-3.5 ${config.iconColor}`} />
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 min-w-0 pb-6">
+                <div className="flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5">
+                    {/* Actor name */}
+                    <span className="text-sm font-semibold text-foreground">
+                        {entry.actor.name}
+                    </span>
+
+                    {/* Action label */}
+                    <span className="text-sm text-muted-foreground">
+                        {entry.message}
+                    </span>
+                </div>
+
+                {/* Timestamp */}
+                <div className="flex items-center gap-2 mt-1">
+                    <span className="text-xs text-muted-foreground/50">
+                        {entry.createdAt.toLocaleString()}
+                    </span>
+                </div>
+            </div>
+        </div>
+    )
+}
+
+// Component
+
+export default async function ComplaintAudit({ complaintId }: { complaintId: string }) {
+    const session = await getServerSession(authOptions)
+    if (!session?.user) throw new Error("Unauthorized")
+
+    const activity = await prisma.complaintAudit.findMany({
+        where: { complaintId },
+        include: {
+            actor: {
+                select: { name: true, email: true },
+            },
+        },
+        orderBy: { createdAt: "asc" },
+    })
+
+    if (activity.length === 0) {
+        return (
+            <h2
+                className="text-sm font-semibold text-foreground"
+            >
+                No activity
+            </h2>
+        )
+    }
+
+    return (
+        <div>
+            {/* Header */}
+            <div className="flex items-center gap-2 mb-5">
+                <GitCommitHorizontal className="h-4 w-4 text-muted-foreground" />
+                <h2
+                    className="text-sm font-semibold text-foreground"
+                >
+                    Activity
+                </h2>
+                {activity.length > 0 && (
+                    <span className="ml-auto text-xs text-muted-foreground">
+                        {activity.length} event{activity.length !== 1 ? "s" : ""}
+                    </span>
+                )}
+            </div>
+
+            {/* Timeline */}
+            {activity.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-8 text-center">
+                    <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center mb-3">
+                        <GitCommitHorizontal className="h-4 w-4 text-muted-foreground/50" />
+                    </div>
+                    <p className="text-sm text-muted-foreground">No activity recorded yet.</p>
+                </div>
+            ) : (
+                <div className="pl-1">
+                    {activity.map((entry, i) => (
+                        <AuditRow
+                            key={entry.id}
+                            entry={entry as AuditEntry}
+                            isLast={i === activity.length - 1}
+                        />
+                    ))}
+                </div>
+            )}
+        </div>
+    )
+}

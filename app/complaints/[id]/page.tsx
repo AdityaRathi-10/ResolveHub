@@ -23,6 +23,8 @@ import {
 import { prisma } from "@/lib/prisma"
 import { revalidatePath } from "next/cache"
 import UpVotes from "@/components/Upvotes"
+import ComplaintActivityButton from "@/components/ComplaintActivityButton"
+import ComplaintAudit from "@/components/ComplaintAudit"
 
 type Priority = "HIGH" | "MEDIUM" | "LOW"
 type Status = "PENDING" | "IN_PROGRESS" | "RESOLVED" | "CLOSED"
@@ -204,18 +206,30 @@ export default async function ComplaintDetailPage({
             <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-8">
 
                 {/* Breadcrumb */}
-                <div className="flex items-center gap-2 mb-6">
-                    <Link
-                        href="/complaints"
-                        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
-                    >
-                        <ArrowLeft className="h-4 w-4" />
-                        Complaints
-                    </Link>
-                    <span className="text-muted-foreground/40">/</span>
-                    <span className="text-sm text-foreground/60 truncate max-w-50">
-                        {complaint.title}
-                    </span>
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 mb-6">
+                        <Link
+                            href="/complaints"
+                            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                            <ArrowLeft className="h-4 w-4" />
+                            Complaints
+                        </Link>
+                        <span className="text-muted-foreground/40">/</span>
+                        <span className="text-sm text-foreground/60 truncate max-w-50">
+                            {complaint.title}
+                        </span>
+                    </div>
+                    {
+                        session.user.role === "CARETAKER" && (
+                            <ComplaintActivityButton
+                                assigned={!!complaint.assignedTo}
+                                complaintId={complaint.id}
+                                assignedTo={complaint.assignedToId}
+                                status={complaint.status}
+                            />
+                        )
+                    }
                 </div>
 
                 {/* Main content */}
@@ -310,16 +324,14 @@ export default async function ComplaintDetailPage({
                                     complaintId={complaint.id}
                                     upvotesCount={complaint.upvotesCount}
                                     hasUpvoted={isLikedByUser}
+                                    isStudent={session.user.role === "STUDENT"}
                                 />
                             </div>
 
                             {/* Timestamps */}
-                            <div className="flex flex-wrap gap-x-4 gap-y-1 mt-4 pt-3 border-t border-border/40">
+                            <div className="mt-4 pt-3 border-t border-border/40">
                                 <span className="text-xs text-muted-foreground">
                                     Created {complaint.createdAt.toLocaleString()}
-                                </span>
-                                <span className="text-xs text-muted-foreground">
-                                    Updated {complaint.updatedAt.toLocaleString()}
                                 </span>
                             </div>
                         </div>
@@ -360,6 +372,14 @@ export default async function ComplaintDetailPage({
                             </div>
                         </div>
                     )}
+
+                    <Separator className="mb-5" />
+
+                    <ComplaintAudit
+                        complaintId={complaint.id}
+                    />
+
+                    <Separator className="mb-5" />
 
                     {/* Comments */}
                     <div className="bg-card border border-border rounded-2xl p-5">
