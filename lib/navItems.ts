@@ -9,7 +9,6 @@ export const NAV_ITEMS: Record<ROLE, NavigationProps[]> = {
     STUDENT: [
         { label: "Dashboard", href: "/complaints" },
         { label: "My Complaints", href: "/complaints/me" },
-        { label: "Create Complaint", href: "/complaints/new" }
     ],
     CARETAKER: [
         { label: "Dashboard", href: "/complaints" },
