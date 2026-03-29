@@ -34,41 +34,52 @@ enum RESOLUTION_STATUS {
   REJECTED
 }
 
+enum COMPLAINT_AUDIT {
+  ASSIGNED
+  UNASSIGNED
+  STATUS_CHANGED
+  ESCALATED
+  RESOLUTION_SUBMITTED
+  REOPENED
+}
+
 model User {
-  id                 String       @id @default(cuid())
-  name               String
-  email              String       @unique
-  password           String
-  role               ROLE         @default(STUDENT)
-  points             Int          @default(0)
-  complaints         Complaint[]  @relation("UserComplaints")
-  assignedComplaints Complaint[]  @relation("AssignedComplaints")
-  resolutions        Resolution[]
-  comments           Comment[]
-  createdAt          DateTime     @default(now())
-  updatedAt          DateTime     @updatedAt
-  upvotes            Upvotes[]
+  id                  String              @id @default(cuid())
+  name                String
+  email               String              @unique
+  password            String
+  role                ROLE                @default(STUDENT)
+  points              Int                 @default(0)
+  complaints          Complaint[]         @relation("UserComplaints")
+  assignedComplaints  Complaint[]         @relation("AssignedComplaints")
+  resolutions         Resolution[]
+  complaintActivities ComplaintAudit[]
+  comments            Comment[]
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+  upvotes             Upvotes[]
 }
 
 model Complaint {
-  id           String       @id @default(cuid())
+  id           String              @id @default(cuid())
   title        String
   description  String?
-  media        String[]     @default([])
-  priority     PRIORITY     @default(LOW)
-  status       STATUS       @default(PENDING)
-  upvotesCount Int          @default(0)
+  media        String[]            @default([])
+  priority     PRIORITY            @default(LOW)
+  status       STATUS              @default(PENDING)
+  upvotesCount Int                 @default(0)
   userId       String
-  user         User         @relation("UserComplaints", fields: [userId], references: [id])
+  user         User                @relation("UserComplaints", fields: [userId], references: [id])
   assignedToId String?
-  assignedTo   User?        @relation("AssignedComplaints", fields: [assignedToId], references: [id])
+  assignedTo   User?               @relation("AssignedComplaints", fields: [assignedToId], references: [id])
   deadline     DateTime?
-  isEscalated  Boolean      @default(false)
+  isEscalated  Boolean             @default(false)
   upvotes      Upvotes[]
   commentList  Comment[]
   resolutions  Resolution[]
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
+  activities   ComplaintAudit[]
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
 
   @@index([userId, assignedToId])
 }
@@ -83,7 +94,7 @@ model Comment {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
-  @@unique([userId, complaintId])
+  @@index([userId, complaintId])
 }
 
 model Resolution {
@@ -97,7 +108,7 @@ model Resolution {
   status      RESOLUTION_STATUS @default(PENDING)
   createdAt   DateTime          @default(now())
 
-  @@unique([complaintId, caretakerId])
+  @@index([complaintId, caretakerId])
 }
 
 model Upvotes {
@@ -108,4 +119,15 @@ model Upvotes {
   complaint   Complaint @relation(fields: [complaintId], references: [id])
 
   @@unique([userId, complaintId])
+}
+
+model ComplaintAudit {
+  id          String             @id @default(cuid())
+  complaintId String
+  complaint   Complaint          @relation(fields: [complaintId], references: [id])
+  actorId     String
+  actor       User               @relation(fields: [actorId], references: [id])
+  type        COMPLAINT_AUDIT
+  message     String
+  createdAt   DateTime           @default(now())
 }
