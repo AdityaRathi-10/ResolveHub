@@ -21,6 +21,7 @@ import {
 import Link from "next/link"
 import createComplaintAction from "./action"
 import { useRouter } from "next/navigation"
+import Image from "next/image"
 
 const PRIORITY_OPTIONS = [
     {
@@ -255,10 +256,11 @@ export default function CreateComplaintPage() {
                                                 key={url}
                                                 className="relative group h-16 w-16 rounded-lg overflow-hidden border border-border bg-muted shrink-0"
                                             >
-                                                <img
+                                                <Image
                                                     src={url}
                                                     alt="Attachment"
-                                                    className="h-full w-full object-cover"
+                                                    fill
+                                                    className="object-cover"
                                                 />
                                                 <button
                                                     type="button"

@@ -29,7 +29,7 @@ export default function UpVotes({ complaintId, upvotesCount, hasUpvoted, isStude
         try {
             const response = await toggleUpvote(complaintId)
             setLiked(response.hasUpvoted)
-        } catch (error) {
+        } catch {
             setLiked(liked)
             setCount(upvotesCount)
         } finally {

@@ -22,7 +22,6 @@ import {
     TrendingUp,
     ArrowRight,
     Star,
-    SectionIcon,
 } from "lucide-react"
 import { prisma } from "@/lib/prisma"
 import { formatDistanceToNowStrict } from "date-fns"

@@ -84,7 +84,7 @@ export default async function ComplaintsPage({ searchParams }: ComplaintsPagePro
 
     const filterComplaints = complaints.filter((complaint) => {
         const stat = activeStatus?.replaceAll(" ", "_").toUpperCase();
-        if (activeStatus === "all") return complaints
+        if (activeStatus === "all") return true
         return complaint.status === stat
     })
 
