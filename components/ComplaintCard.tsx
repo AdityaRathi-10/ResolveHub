@@ -10,7 +10,6 @@ import {
     MessageSquare,
     Paperclip,
     CalendarClock,
-    UserCheck,
     TrendingUp,
 } from "lucide-react"
 import { escalateComplaints } from "@/lib/escalateComplaint"

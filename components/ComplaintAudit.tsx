@@ -10,7 +10,8 @@ import {
     RotateCcw,
     GitCommitHorizontal,
 } from "lucide-react"
-import { format, formatDistanceToNow, formatDistanceToNowStrict } from "date-fns"
+import { format, formatDistanceToNowStrict } from "date-fns"
+import MarkAsResolved from "./MarkAsResolved"
 
 // Types
 
@@ -84,7 +85,7 @@ const AUDIT_CONFIG: Record<
 
 // Single event row
 
-function AuditRow({
+async function AuditRow({
     entry,
     isLast,
 }: {
@@ -139,7 +140,10 @@ function AuditRow({
 
 // Component
 
-export default async function ComplaintAudit({ complaintId }: { complaintId: string }) {
+export default async function ComplaintAudit({ complaintId, caretakerId }: {
+    complaintId: string,
+    caretakerId: string | null
+}) {
     const session = await getServerSession(authOptions)
     if (!session?.user) throw new Error("Unauthorized")
 
@@ -149,8 +153,23 @@ export default async function ComplaintAudit({ complaintId }: { complaintId: str
             actor: {
                 select: { name: true, email: true },
             },
+            complaint: {
+                select: { status: true, assignedToId: true }
+            }
         },
-        orderBy: { createdAt: "asc" },
+        orderBy: { createdAt: "desc" },
+    })
+
+    const latestResolution = await prisma.resolution.findFirst({
+        where: {
+            complaintId
+        },
+        orderBy: {
+            createdAt: "desc"
+        },
+        select: {
+            status: true
+        }
     })
 
     if (activity.length === 0) {
@@ -199,6 +218,15 @@ export default async function ComplaintAudit({ complaintId }: { complaintId: str
                     ))}
                 </div>
             )}
+
+            <MarkAsResolved
+                complaintId={complaintId}
+                caretakerId={caretakerId}
+                resolutionStatus={latestResolution?.status as string}
+                complaintStatus={activity[0].complaint.status}
+                assignedToId={activity[0].complaint.assignedToId}
+                currentUserId={session.user.id}
+            />
         </div>
     )
 }
