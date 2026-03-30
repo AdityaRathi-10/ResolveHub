@@ -44,42 +44,42 @@ enum COMPLAINT_AUDIT {
 }
 
 model User {
-  id                  String              @id @default(cuid())
+  id                  String           @id @default(cuid())
   name                String
-  email               String              @unique
+  email               String           @unique
   password            String
-  role                ROLE                @default(STUDENT)
-  points              Int                 @default(0)
-  complaints          Complaint[]         @relation("UserComplaints")
-  assignedComplaints  Complaint[]         @relation("AssignedComplaints")
+  role                ROLE             @default(STUDENT)
+  points              Int              @default(0)
+  complaints          Complaint[]      @relation("UserComplaints")
+  assignedComplaints  Complaint[]      @relation("AssignedComplaints")
   resolutions         Resolution[]
   complaintActivities ComplaintAudit[]
   comments            Comment[]
-  createdAt           DateTime            @default(now())
-  updatedAt           DateTime            @updatedAt
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
   upvotes             Upvotes[]
 }
 
 model Complaint {
-  id           String              @id @default(cuid())
+  id           String           @id @default(cuid())
   title        String
   description  String?
-  media        String[]            @default([])
-  priority     PRIORITY            @default(LOW)
-  status       STATUS              @default(PENDING)
-  upvotesCount Int                 @default(0)
+  media        String[]         @default([])
+  priority     PRIORITY         @default(LOW)
+  status       STATUS           @default(PENDING)
+  upvotesCount Int              @default(0)
   userId       String
-  user         User                @relation("UserComplaints", fields: [userId], references: [id])
+  user         User             @relation("UserComplaints", fields: [userId], references: [id])
   assignedToId String?
-  assignedTo   User?               @relation("AssignedComplaints", fields: [assignedToId], references: [id])
+  assignedTo   User?            @relation("AssignedComplaints", fields: [assignedToId], references: [id])
   deadline     DateTime?
-  isEscalated  Boolean             @default(false)
+  isEscalated  Boolean          @default(false)
   upvotes      Upvotes[]
   commentList  Comment[]
   resolutions  Resolution[]
   activities   ComplaintAudit[]
-  createdAt    DateTime            @default(now())
-  updatedAt    DateTime            @updatedAt
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
 
   @@index([userId, assignedToId])
 }
@@ -98,15 +98,17 @@ model Comment {
 }
 
 model Resolution {
-  id          String            @id @default(cuid())
-  description String?
-  media       String[]          @default([])
-  complaintId String
-  complaint   Complaint         @relation(fields: [complaintId], references: [id])
-  caretakerId String
-  caretaker   User              @relation(fields: [caretakerId], references: [id])
-  status      RESOLUTION_STATUS @default(PENDING)
-  createdAt   DateTime          @default(now())
+  id              String            @id @default(cuid())
+  description     String?
+  media           String[]          @default([])
+  complaintId     String
+  complaint       Complaint         @relation(fields: [complaintId], references: [id])
+  caretakerId     String
+  caretaker       User              @relation(fields: [caretakerId], references: [id])
+  status          RESOLUTION_STATUS @default(PENDING)
+  rejectionReason String?
+  rejectedAt      DateTime?
+  createdAt       DateTime          @default(now())
 
   @@index([complaintId, caretakerId])
 }
@@ -122,12 +124,12 @@ model Upvotes {
 }
 
 model ComplaintAudit {
-  id          String             @id @default(cuid())
+  id          String          @id @default(cuid())
   complaintId String
-  complaint   Complaint          @relation(fields: [complaintId], references: [id])
+  complaint   Complaint       @relation(fields: [complaintId], references: [id])
   actorId     String
-  actor       User               @relation(fields: [actorId], references: [id])
+  actor       User            @relation(fields: [actorId], references: [id])
   type        COMPLAINT_AUDIT
   message     String
-  createdAt   DateTime           @default(now())
+  createdAt   DateTime        @default(now())
 }
