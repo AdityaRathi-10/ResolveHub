@@ -25,7 +25,8 @@ import { revalidatePath } from "next/cache"
 import UpVotes from "@/components/Upvotes"
 import ComplaintActivityButton from "@/components/ComplaintActivityButton"
 import ComplaintAudit from "@/components/ComplaintAudit"
-import { format ,formatDistanceToNowStrict } from "date-fns"
+import { formatDistanceToNowStrict } from "date-fns"
+import { ResolutionCard } from "@/components/ResolutionCard"
 
 type Priority = "HIGH" | "MEDIUM" | "LOW"
 type Status = "PENDING" | "IN_PROGRESS" | "RESOLVED" | "CLOSED"
@@ -87,12 +88,6 @@ const STATUS_CONFIG: Record<Status, { label: string; icon: React.ElementType; cl
     CLOSED: { label: "Closed", icon: XCircle, class: "text-muted-foreground", bg: "bg-muted" },
 }
 
-const RESOLUTION_CONFIG: Record<ResolutionStatus, { label: string; class: string }> = {
-    PENDING: { label: "Pending Review", class: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20" },
-    APPROVED: { label: "Approved", class: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20" },
-    REJECTED: { label: "Rejected", class: "bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20" },
-}
-
 // Helpers
 
 function initials(name: string) {
@@ -118,38 +113,6 @@ function CommentItem({ comment }: { comment: ComplaintDetail["commentList"][numb
                 </div>
                 <p className="text-sm text-foreground/80 leading-relaxed">{comment.description}</p>
             </div>
-        </div>
-    )
-}
-
-function ResolutionCard({ resolution }: { resolution: ComplaintDetail["resolutions"][number] }) {
-    const config = RESOLUTION_CONFIG[resolution.status]
-    return (
-        <div className="rounded-xl border border-border bg-muted/30 p-4">
-            <div className="flex items-center justify-between gap-2 mb-3">
-                <div className="flex items-center gap-2">
-                    <ShieldCheck className="h-4 w-4 text-primary" />
-                    <span className="text-sm font-medium text-foreground">
-                        Resolution by {resolution.caretaker.name}
-                    </span>
-                </div>
-                <span className={`inline-flex text-xs font-medium px-2 py-0.5 rounded-full border ${config.class}`}>
-                    {config.label}
-                </span>
-            </div>
-            {resolution.description && (
-                <p className="text-sm text-muted-foreground leading-relaxed mb-3">
-                    {resolution.description}
-                </p>
-            )}
-            {resolution.media.length > 0 && (
-                <div className="mt-3">
-                    <MediaGallery urls={resolution.media} />
-                </div>
-            )}
-            <p className="text-xs text-muted-foreground mt-3">
-                Submitted {formatDistanceToNowStrict(new Date(resolution.createdAt), { addSuffix: true })}
-            </p>
         </div>
     )
 }
@@ -196,7 +159,7 @@ export default async function ComplaintDetailPage({
             data: {
                 description: text,
                 complaintId,
-                userId: session?.user.id!,
+                userId: session!.user.id,
             },
         })
         revalidatePath(`/complaints/${complaintId}`)
@@ -367,8 +330,22 @@ export default async function ComplaintDetailPage({
                                 </Badge>
                             </div>
                             <div className="space-y-3">
-                                {complaint.resolutions.map((res) => (
-                                    <ResolutionCard key={res.id} resolution={res} />
+                                {complaint.resolutions.map((res, index) => (
+                                    <>
+                                    <ResolutionCard
+                                        key={res.id}
+                                        resolution={res}
+                                        attemptIndex={index + 1}
+                                        total={complaint.resolutions.length}
+                                        canReview={
+                                            session.user.role === "STUDENT" &&
+                                            session.user.id === complaint.user.id &&
+                                            res.status === "PENDING"
+                                        }
+                                        complaintId={complaint.id}
+                                        studentId={complaint.assignedToId}
+                                    />
+                                    </>
                                 ))}
                             </div>
                         </div>
@@ -378,6 +355,7 @@ export default async function ComplaintDetailPage({
 
                     <ComplaintAudit
                         complaintId={complaint.id}
+                        caretakerId={complaint.assignedToId}
                     />
 
                     <Separator className="mb-5" />
