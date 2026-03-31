@@ -53,8 +53,15 @@ export default async function ComplaintsPage({ searchParams }: ComplaintsPagePro
     const role = session.user.role as "STUDENT" | "CARETAKER" | "SUPERVISOR"
     const where: any = {}
 
-    if (status && status !== "All") {
+    if (status && status !== "All" && status !== "escalated") {
         where.status = status.replaceAll(" ", "_").toUpperCase()
+    }
+
+    if(status === "escalated") {
+        if(session.user.role !== "SUPERVISOR") {
+            redirect("/complaints")
+        }
+        where.isEscalated = true
     }
 
     if (priority && priority !== "All") {
@@ -64,8 +71,9 @@ export default async function ComplaintsPage({ searchParams }: ComplaintsPagePro
     const orderBy: any = {}
 
     if (sort === "newest") orderBy.createdAt = "desc"
-    if (sort === "oldest") orderBy.createdAt = "asc"
-    if (sort === "upvotes") orderBy.upvotes = "desc"
+    else if (sort === "oldest") orderBy.createdAt = "asc"
+    else if (sort === "upvotes") orderBy.upvotes = "desc"
+    else orderBy.createdAt = "desc"
 
     const complaints = await prisma.complaint.findMany({
         where,
@@ -77,14 +85,19 @@ export default async function ComplaintsPage({ searchParams }: ComplaintsPagePro
                 select: {
                     commentList: true,
                     resolutions: true,
-                }
-            }
-        }
+                },
+            },
+        },
     })
 
+    const stat = activeStatus !== "all" ? activeStatus?.replaceAll(" ", "_").toUpperCase() : null
     const filterComplaints = complaints.filter((complaint) => {
-        const stat = activeStatus?.replaceAll(" ", "_").toUpperCase();
-        if (activeStatus === "all") return true
+        if (activeStatus === "all") {
+            return complaint.status !== "CLOSED"
+        }
+        if (activeStatus === "closed") {
+            return complaint.status === "CLOSED"
+        }
         return complaint.status === stat
     })
 
@@ -92,7 +105,7 @@ export default async function ComplaintsPage({ searchParams }: ComplaintsPagePro
         total: complaints.length,
         pending: complaints.filter((c) => c.status === "PENDING").length,
         inProgress: complaints.filter((c) => c.status === "IN_PROGRESS").length,
-        resolved: complaints.filter((c) => c.status === "RESOLVED").length,
+        resolved: complaints.filter((c) => c.status === "RESOLVED" || c.status === "CLOSED").length,
     }
 
     return (
@@ -134,7 +147,7 @@ export default async function ComplaintsPage({ searchParams }: ComplaintsPagePro
                 {/* Count */}
                 <div className="flex items-center gap-2 mb-4">
                     <span className="text-sm text-muted-foreground">
-                        Showing <span className="font-medium text-foreground">{complaints.length}</span> complaints
+                        Showing <span className="font-medium text-foreground">{filterComplaints.length}</span> complaints
                     </span>
                     <Separator orientation="vertical" className="h-4" />
                     <div className="flex items-center gap-1.5 text-xs text-muted-foreground">

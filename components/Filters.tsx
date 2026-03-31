@@ -8,19 +8,13 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
-
-const tabs = [
-    { label: "All", value: "all" },
-    { label: "Pending", value: "pending" },
-    { label: "In Progress", value: "in progress" },
-    { label: "Resolved", value: "resolved" },
-    { label: "Closed", value: "closed" }
-]
+import { useSession } from "next-auth/react"
+import { Button } from "./ui/button"
 
 export default function Filters({ activeStatus }: { activeStatus: string }) {
     const router = useRouter()
     const searchParams = useSearchParams()
-
+    const { data: session } = useSession()
     function updateParam(key: string, value: string) {
         const params = new URLSearchParams(searchParams.toString())
         if (value === "all") {
@@ -31,22 +25,34 @@ export default function Filters({ activeStatus }: { activeStatus: string }) {
         router.push(`/complaints?${params.toString()}`)
     }
 
+    const baseTabs = [
+        { label: "All", value: "all" },
+        { label: "Pending", value: "pending" },
+        { label: "In Progress", value: "in progress" },
+        { label: "Resolved", value: "resolved" },
+        { label: "Closed", value: "closed" }
+    ]
+
+
+    const tabs = session?.user.role === "SUPERVISOR" ? [...baseTabs, { label: "Escalated", value: "escalated" }] : baseTabs
+
     return (
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mb-5">
 
             {/* Status Tabs */}
-            <div className="flex items-center gap-1 bg-muted/50 p-1 rounded-xl border border-border flex-wrap">
+            <div className="flex items-center gap-1 bg-muted/50 rounded-xl border border-border flex-wrap">
                 {tabs.map(({ label, value }) => (
-                    <button
-                        key={label}
+                    <Button
+                        variant={"ghost"}
+                        key={value}
                         onClick={() => updateParam("status", value)}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-medium ${activeStatus === value
-                                ? "bg-background text-foreground shadow-sm border border-border"
-                                : "text-muted-foreground hover:text-foreground"
+                        className={`p-4 rounded-lg text-xs font-medium cursor-pointer ${activeStatus === value
+                            ? "bg-background text-foreground shadow-sm border border-border"
+                            : "text-muted-foreground hover:text-foreground"
                             }`}
                     >
                         {label}
-                    </button>
+                    </Button>
                 ))}
             </div>
 
