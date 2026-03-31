@@ -184,16 +184,13 @@ export default async function ComplaintDetailPage({
                             {complaint.title}
                         </span>
                     </div>
-                    {
-                        session.user.role === "CARETAKER" && (
-                            <ComplaintActivityButton
-                                assigned={!!complaint.assignedTo}
-                                complaintId={complaint.id}
-                                assignedTo={complaint.assignedToId}
-                                status={complaint.status}
-                            />
-                        )
-                    }
+                    <ComplaintActivityButton
+                        assigned={!!complaint.assignedTo}
+                        complaintId={complaint.id}
+                        assignedTo={complaint.assignedToId}
+                        status={complaint.status}
+                        createdBy={complaint.userId}
+                    />
                 </div>
 
                 {/* Main content */}
@@ -343,7 +340,8 @@ export default async function ComplaintDetailPage({
                                             res.status === "PENDING"
                                         }
                                         complaintId={complaint.id}
-                                        studentId={complaint.assignedToId}
+                                        studentId={complaint.userId}
+                                        caretakerId={complaint.assignedToId}
                                     />
                                     </>
                                 ))}

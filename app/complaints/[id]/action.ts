@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/options";
 import { revalidatePath } from "next/cache";
+import { calculateCaretakerPoints } from "@/lib/calculateCaretakerPoints";
 
 export async function toggleUpvote(complaintId: string) {
   const session = await getServerSession(authOptions);
@@ -90,9 +91,9 @@ export async function assignComplaint(complaintId: string) {
       complaintId,
       actorId: userId,
       type: "ASSIGNED",
-      message: `Assigned to ${username}`
-    }
-  })
+      message: `Assigned to ${username}`,
+    },
+  });
 
   return {
     success: true,
@@ -133,9 +134,9 @@ export async function unassignComplaint(complaintId: string) {
       complaintId,
       actorId: userId,
       type: "UNASSIGNED",
-      message: `Unassigned ${username}`
-    }
-  })
+      message: `Unassigned ${username}`,
+    },
+  });
 
   return {
     success: true,
@@ -155,18 +156,18 @@ export async function startWorkingOnComplaint(complaintId: string) {
 
   const updated = await prisma.complaint.update({
     where: {
-      id: complaintId
+      id: complaintId,
     },
     data: {
-      status: "IN_PROGRESS"
-    }
-  })
+      status: "IN_PROGRESS",
+    },
+  });
 
-  if(!updated) {
+  if (!updated) {
     return {
       success: false,
-      message: "Error updating status"
-    }
+      message: "Error updating status",
+    };
   }
 
   await prisma.complaintAudit.create({
@@ -174,28 +175,33 @@ export async function startWorkingOnComplaint(complaintId: string) {
       complaintId,
       actorId: userId,
       type: "STATUS_CHANGED",
-      message: `Complaint is now ${updated.status.replaceAll("_", " ")} state`
-    }
-  })
+      message: `Complaint is now ${updated.status.replaceAll("_", " ")} state`,
+    },
+  });
 
-  revalidatePath(`/complaints/${complaintId}`)
+  revalidatePath(`/complaints/${complaintId}`);
 
   return {
     success: true,
-    message: "Complaint is now in progress"
-  }
+    message: "Complaint is now in progress",
+  };
 }
 
-export async function submitResolutionAction(caretakerId: string, complaintId: string, description: string, mediaUrls: string[]) {
-  const session = await getServerSession(authOptions)
-  if(!session?.user) throw new Error("Unauthorized")
+export async function submitResolutionAction(
+  caretakerId: string,
+  complaintId: string,
+  description: string,
+  mediaUrls: string[],
+) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user) throw new Error("Unauthorized");
 
   if (session.user.role !== "CARETAKER") {
     throw new Error("Only caretakers can post resolutions for complaints");
   }
 
-  if(session.user.id !== caretakerId) {
-    throw new Error("You are not allow to perform this action")
+  if (session.user.id !== caretakerId) {
+    throw new Error("You are not allow to perform this action");
   }
 
   const resolutionCreated = await prisma.resolution.create({
@@ -204,31 +210,36 @@ export async function submitResolutionAction(caretakerId: string, complaintId: s
       complaintId,
       description,
       media: mediaUrls,
-    }
-  })
+    },
+  });
 
-  if(resolutionCreated.id) {
+  if (resolutionCreated.id) {
     await prisma.complaintAudit.create({
       data: {
         complaintId,
         actorId: caretakerId,
         type: "RESOLUTION_SUBMITTED",
-        message: "Resolution shared"
-      }
-    })
+        message: "Resolution shared",
+      },
+    });
   }
 
-  revalidatePath(`/complaints/${complaintId}`)
+  revalidatePath(`/complaints/${complaintId}`);
 
   return {
     success: true,
-    message: "Resolution added successfully"
-  }
+    message: "Resolution added successfully",
+  };
 }
 
-export async function approveResolution(complaintId: string, studentId: string, resolutionId: string) {
-  const session = await getServerSession(authOptions)
-  if(!session?.user) throw new Error("Unauthorized")
+export async function approveResolution(
+  complaintId: string,
+  studentId: string,
+  caretakerId: string | null,
+  resolutionId: string,
+) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user) throw new Error("Unauthorized");
 
   if (session.user.role !== "STUDENT") {
     throw new Error("Only student can approve resolutions");
@@ -236,35 +247,56 @@ export async function approveResolution(complaintId: string, studentId: string, 
 
   const updatedResolution = await prisma.resolution.update({
     where: {
-      id: resolutionId
+      id: resolutionId,
     },
     data: {
-      status: "APPROVED"
+      status: "APPROVED",
     },
-  })
+  });
 
-  if(!updatedResolution) {
+  if (!updatedResolution) {
     return {
       success: false,
-      message: "Error updating resolution status"
-    }
+      message: "Error updating resolution status",
+    };
   }
 
   const updatedComplaint = await prisma.complaint.update({
     where: {
-      id: complaintId
+      id: complaintId,
     },
     data: {
-      status: "RESOLVED"
-    }
-  })
+      status: "RESOLVED",
+    },
+  });
 
-  if(!updatedComplaint) {
+  if (!updatedComplaint) {
     return {
       success: false,
-      message: "Error updating complaint status"
-    }
+      message: "Error updating complaint status",
+    };
   }
+
+  const caretakerPoints = calculateCaretakerPoints(
+    updatedComplaint.deadline!,
+    updatedComplaint.createdAt,
+  );
+
+  if(!caretakerId) {
+    return {
+      success: false,
+      message: "Unauthorized",
+    };
+  }
+
+  await prisma.user.update({
+    where: {
+      id: caretakerId,
+    },
+    data: {
+      points: caretakerPoints,
+    },
+  });
 
   await prisma.complaintAudit.create({
     data: {
@@ -272,20 +304,25 @@ export async function approveResolution(complaintId: string, studentId: string, 
       complaintId,
       type: "STATUS_CHANGED",
       message: "Resolution approved",
-    }
-  })
+    },
+  });
 
-  revalidatePath(`/complaints/${complaintId}`)
+  revalidatePath(`/complaints/${complaintId}`);
 
   return {
     success: true,
-    message: "Resolution approved"
-  }
+    message: "Resolution approved",
+  };
 }
 
-export async function disapproveResolution(complaintId: string, studentId: string, resolutionId: string, reason: string) {
-  const session = await getServerSession(authOptions)
-  if(!session?.user) throw new Error("Unauthorized")
+export async function disapproveResolution(
+  complaintId: string,
+  studentId: string,
+  resolutionId: string,
+  reason: string,
+) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user) throw new Error("Unauthorized");
 
   if (session.user.role !== "STUDENT") {
     throw new Error("Only student can disapprove resolutions");
@@ -293,20 +330,20 @@ export async function disapproveResolution(complaintId: string, studentId: strin
 
   const updatedResolution = await prisma.resolution.update({
     where: {
-      id: resolutionId
+      id: resolutionId,
     },
     data: {
       status: "REJECTED",
       rejectionReason: reason,
-      rejectedAt: new Date()
+      rejectedAt: new Date(),
     },
-  })
+  });
 
-  if(!updatedResolution) {
+  if (!updatedResolution) {
     return {
       success: false,
-      message: "Error updating resolution status"
-    }
+      message: "Error updating resolution status",
+    };
   }
 
   await prisma.complaintAudit.create({
@@ -315,13 +352,51 @@ export async function disapproveResolution(complaintId: string, studentId: strin
       complaintId,
       type: "STATUS_CHANGED",
       message: "Resolution rejected",
-    }
-  })
+    },
+  });
 
-  revalidatePath(`/complaints/${complaintId}`)
+  revalidatePath(`/complaints/${complaintId}`);
 
   return {
     success: true,
-    message: "Resolution rejected"
+    message: "Resolution rejected",
+  };
+}
+
+export async function closeComplaint(
+  complaintId: string,
+  actorId: string | null
+) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user || !actorId) throw new Error("Unauthorized");
+
+  const updatedComplaint = await prisma.complaint.update({
+    where: {
+      id: complaintId
+    },
+    data: {
+      status: "CLOSED"
+    }
+  })
+
+  if(!updatedComplaint) {
+    return {
+      success: false,
+      message: "Error closing complaint"
+    }
+  }
+
+  await prisma.complaintAudit.create({
+    data: {
+      actorId,
+      complaintId,
+      type: "STATUS_CHANGED",
+      message: "Complaint Closed!"
+    }
+  })
+
+  return {
+    success: true,
+    message: "Complaint closed successfully"
   }
 }
