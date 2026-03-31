@@ -387,7 +387,6 @@ export default async function MyComplaintsPage() {
                             icon={Star}
                             iconClass="text-amber-500"
                             iconBg="bg-amber-500/10"
-                            sub="community support"
                         />
                     ) : (
                         <StatCard

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect } from "react"
 import { createPortal } from "react-dom"
 import { MediaGallery } from "@/components/MediaGallery"
 import {
@@ -44,6 +44,7 @@ export interface ResolutionCardProps {
     canReview?: boolean
     complaintId: string
     studentId: string | null
+    caretakerId: string | null
 }
 
 // ─── Status config ────────────────────────────────────────────────────────────
@@ -254,6 +255,7 @@ export function ResolutionCard({
     canReview = false,
     complaintId,
     studentId,
+    caretakerId
 }: ResolutionCardProps) {
     const config = STATUS_CONFIG[resolution.status]
     const StatusIcon = config.icon
@@ -284,7 +286,7 @@ export function ResolutionCard({
         if (isActing || isDone || !studentId) return
         setAction("approve")
         try {
-            const response = await approveResolution(complaintId, studentId, resolution.id)
+            const response = await approveResolution(complaintId, studentId, caretakerId, resolution.id)
             if (response.success) {
                 setAction("done")
             } else {
