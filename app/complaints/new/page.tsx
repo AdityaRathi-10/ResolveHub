@@ -9,6 +9,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import { Textarea } from "@/components/ui/textarea"
 import {
     FileText,
     AlignLeft,
@@ -28,30 +29,34 @@ const PRIORITY_OPTIONS = [
         value: "LOW",
         label: "Low",
         description: "Minor issue, not time-sensitive",
-        color: "text-emerald-600 dark:text-emerald-400",
-        bg: "bg-emerald-500/10 border-emerald-500/30",
+        textColor: "text-emerald-600 dark:text-emerald-400",
+        selectedClass: "bg-emerald-500/10 border-emerald-500/40 ring-1 ring-inset ring-emerald-500/30",
+        idleClass: "bg-muted/50 border-border hover:bg-emerald-500/5 hover:border-emerald-500/25",
         dot: "bg-emerald-500",
     },
     {
         value: "MEDIUM",
         label: "Medium",
         description: "Moderate impact, needs attention",
-        color: "text-amber-600 dark:text-amber-400",
-        bg: "bg-amber-500/10 border-amber-500/30",
+        textColor: "text-amber-600 dark:text-amber-400",
+        selectedClass: "bg-amber-500/10 border-amber-500/40 ring-1 ring-inset ring-amber-500/30",
+        idleClass: "bg-muted/50 border-border hover:bg-amber-500/5 hover:border-amber-500/25",
         dot: "bg-amber-500",
     },
     {
         value: "HIGH",
         label: "High",
         description: "Urgent, requires immediate action",
-        color: "text-red-600 dark:text-red-400",
-        bg: "bg-red-500/10 border-red-500/30",
+        textColor: "text-red-600 dark:text-red-400",
+        selectedClass: "bg-red-500/10 border-red-500/40 ring-1 ring-inset ring-red-500/30",
+        idleClass: "bg-muted/50 border-border hover:bg-red-500/5 hover:border-red-500/25",
         dot: "bg-red-500",
     },
 ]
 
 export default function CreateComplaintPage() {
     const [imageUrls, setImageUrls] = useState<string[]>([])
+    const [isComplaintCreated, setIsComplaintCreated] = useState(false)
     const router = useRouter()
 
     const form = useForm<z.infer<typeof complaintSchema>>({
@@ -65,9 +70,10 @@ export default function CreateComplaintPage() {
     })
 
     const onSubmit = async (data: z.infer<typeof complaintSchema>) => {
-        const dataWithMediaFiles = {...data, media: imageUrls}
+        const dataWithMediaFiles = { ...data, media: imageUrls }
         const response = await createComplaintAction(dataWithMediaFiles)
-        if(response.success) {
+        if (response.success) {
+            setIsComplaintCreated(true)
             router.replace("/complaints")
         }
     }
@@ -150,7 +156,7 @@ export default function CreateComplaintPage() {
                             </div>
 
                             {/* Description */}
-                            <div className="px-6 py-5">
+                            <div className="px-6 pb-6">
                                 <Controller
                                     name="description"
                                     control={form.control}
@@ -165,13 +171,13 @@ export default function CreateComplaintPage() {
                                                     Description
                                                 </FieldLabel>
                                             </div>
-                                            <textarea
+                                            <Textarea
                                                 {...field}
                                                 id="description"
-                                                rows={4}
-                                                placeholder="Explain the issue in detail — when it started, how it affects you, what you've already tried..."
+                                                rows={14}
+                                                placeholder="Explain the issue in detail..."
                                                 aria-invalid={fieldState.invalid}
-                                                className="w-full text-sm bg-background border border-input rounded-lg px-3 py-2.5 text-foreground placeholder:text-muted-foreground resize-none focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
+                                                className="w-full text-sm bg-background border-input rounded-lg resize-none focus-visible:ring-primary/30"
                                             />
                                             {fieldState.invalid && (
                                                 <FieldError
@@ -185,7 +191,7 @@ export default function CreateComplaintPage() {
                             </div>
 
                             {/* Priority */}
-                            <div className="px-6 py-5">
+                            <div className="px-6 pb-5">
                                 <Controller
                                     name="priority"
                                     control={form.control}
@@ -203,19 +209,21 @@ export default function CreateComplaintPage() {
                                                 {PRIORITY_OPTIONS.map((opt) => {
                                                     const isSelected = field.value === opt.value
                                                     return (
+                                                        // Plain <button> — avoids shadcn Button's baked-in
+                                                        // hover:bg-accent override that would swallow custom hover colours
                                                         <button
                                                             key={opt.value}
                                                             type="button"
                                                             onClick={() => field.onChange(opt.value)}
-                                                            className={`relative flex flex-col items-start gap-1 rounded-xl border px-3.5 py-3 text-left transition-all duration-150
-                                                                ${isSelected
-                                                                    ? `${opt.bg} ring-1 ring-inset ring-current`
-                                                                    : "bg-background border-border hover:border-foreground/20 hover:bg-muted/50"
-                                                                }`}
+                                                            className={`
+                                                                relative flex flex-col items-start gap-1 rounded-xl border
+                                                                px-3.5 py-3 text-left transition-all duration-150
+                                                                ${isSelected ? opt.selectedClass : opt.idleClass}
+                                                            `}
                                                         >
                                                             <div className="flex items-center gap-1.5">
                                                                 <span className={`h-2 w-2 rounded-full ${opt.dot}`} />
-                                                                <span className={`text-xs font-semibold ${isSelected ? opt.color : "text-foreground"}`}>
+                                                                <span className={`text-xs font-semibold ${isSelected ? opt.textColor : "text-foreground"}`}>
                                                                     {opt.label}
                                                                 </span>
                                                             </div>
@@ -239,7 +247,7 @@ export default function CreateComplaintPage() {
                             </div>
 
                             {/* Media upload */}
-                            <div className="px-6 py-5">
+                            <div className="px-6 pb-5">
                                 <div className="flex items-center gap-2 mb-3">
                                     <ImagePlus className="h-3.5 w-3.5 text-muted-foreground" />
                                     <span className="text-sm font-medium text-foreground">
@@ -262,13 +270,15 @@ export default function CreateComplaintPage() {
                                                     fill
                                                     className="object-cover"
                                                 />
-                                                <button
+                                                <Button
                                                     type="button"
+                                                    variant="ghost"
+                                                    size="icon"
                                                     onClick={() => removeImage(url)}
-                                                    className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                    className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-none h-full w-full hover:bg-black/60"
                                                 >
                                                     <X className="h-4 w-4 text-white" />
-                                                </button>
+                                                </Button>
                                             </div>
                                         ))}
                                     </div>
@@ -292,10 +302,11 @@ export default function CreateComplaintPage() {
                                     }}
                                 >
                                     {({ open }) => (
-                                        <button
+                                        <Button
                                             type="button"
+                                            variant="outline"
                                             onClick={() => open()}
-                                            className="flex items-center gap-3 w-full rounded-xl border border-dashed border-border bg-muted/40 px-4 py-3.5 hover:border-foreground/30 hover:bg-muted/60 transition-all duration-150 group"
+                                            className="flex items-center gap-3 w-full h-auto rounded-xl border border-dashed border-border bg-muted/40 px-4 py-3.5 hover:border-foreground/30 hover:bg-muted/60 transition-all duration-150 group justify-start"
                                         >
                                             <div className="h-8 w-8 rounded-lg bg-background border border-border flex items-center justify-center shrink-0 group-hover:border-foreground/20 transition-colors">
                                                 <ImagePlus className="h-4 w-4 text-muted-foreground" />
@@ -304,11 +315,11 @@ export default function CreateComplaintPage() {
                                                 <p className="text-sm font-medium text-foreground">
                                                     {imageUrls.length > 0 ? "Add more files" : "Upload files"}
                                                 </p>
-                                                <p className="text-xs text-muted-foreground">
+                                                <p className="text-xs text-muted-foreground font-normal">
                                                     Images, videos or documents
                                                 </p>
                                             </div>
-                                        </button>
+                                        </Button>
                                     )}
                                 </CldUploadWidget>
                             </div>
@@ -325,11 +336,10 @@ export default function CreateComplaintPage() {
                             </Link>
                             <Button
                                 type="submit"
-                                id="form-new-complaint"
-                                disabled={isSubmitting}
-                                className="h-9 px-5 text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg transition-all duration-150 disabled:opacity-60 flex items-center gap-2"
+                                disabled={isSubmitting || isComplaintCreated}
+                                className="h-9 px-5 text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg transition-all duration-150 disabled:opacity-60 gap-2"
                             >
-                                {isSubmitting ? (
+                                {(isSubmitting || isComplaintCreated) ? (
                                     <>
                                         <Loader2 className="h-3.5 w-3.5 animate-spin" />
                                         Submitting...
