@@ -261,12 +261,8 @@ export default function MarkAsResolved({
 
     const canMarkResolved =
         isCaretaker &&
-        complaintStatus === "IN_PROGRESS" &&
-        !resolutionStatus
-
-    const canCloseComplaint =
-        complaintStatus === "RESOLVED" &&
-        (isCaretaker || currentUserId)
+        (complaintStatus === "IN_PROGRESS" ||
+            resolutionStatus === "REJECTED")
 
     return (
         <>
@@ -276,14 +272,6 @@ export default function MarkAsResolved({
                     className="gap-2 bg-emerald-700 hover:bg-emerald-800 text-white shadow-sm"
                 >
                     Mark as Resolved
-                </Button>
-            )}
-
-            {canCloseComplaint && (
-                <Button
-                    className="gap-2 bg-blue-700 hover:bg-blue-800 text-white shadow-sm"
-                >
-                    Close Complaint
                 </Button>
             )}
 
