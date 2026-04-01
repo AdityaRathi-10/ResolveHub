@@ -21,12 +21,11 @@ import {
     TrendingUp,
 } from "lucide-react"
 import { prisma } from "@/lib/prisma"
-import { revalidatePath } from "next/cache"
 import UpVotes from "@/components/Upvotes"
 import ComplaintActivityButton from "@/components/ComplaintActivityButton"
 import ComplaintAudit from "@/components/ComplaintAudit"
-import { formatDistanceToNowStrict } from "date-fns"
 import { ResolutionCard } from "@/components/ResolutionCard"
+import CommentItem from "@/components/CommentItem"
 
 type Priority = "HIGH" | "MEDIUM" | "LOW"
 type Status = "PENDING" | "IN_PROGRESS" | "RESOLVED" | "CLOSED"
@@ -94,29 +93,6 @@ function initials(name: string) {
     return name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
 }
 
-// Sub-components
-
-function CommentItem({ comment }: { comment: ComplaintDetail["commentList"][number] }) {
-    return (
-        <div className="flex gap-3">
-            <Avatar className="h-8 w-8 shrink-0 mt-0.5">
-                <AvatarFallback className="text-[11px] bg-muted text-muted-foreground font-semibold">
-                    {initials(comment.user.name)}
-                </AvatarFallback>
-            </Avatar>
-            <div className="flex-1 min-w-0">
-                <div className="flex items-baseline gap-2 mb-1">
-                    <span className="text-sm font-medium text-foreground">{comment.user.name}</span>
-                    <span className="text-xs text-muted-foreground">
-                        {formatDistanceToNowStrict(new Date(comment.createdAt), { addSuffix: true })}
-                    </span>
-                </div>
-                <p className="text-sm text-foreground/80 leading-relaxed">{comment.description}</p>
-            </div>
-        </div>
-    )
-}
-
 // Page
 
 export default async function ComplaintDetailPage({
@@ -152,18 +128,6 @@ export default async function ComplaintDetailPage({
     const status = STATUS_CONFIG[complaint.status]
     const StatusIcon = status.icon
     const isLikedByUser = Boolean(complaint.upvotes.find((upvote) => upvote.userId === session.user.id))
-
-    async function submitComment(complaintId: string, text: string) {
-        "use server"
-        await prisma.comment.create({
-            data: {
-                description: text,
-                complaintId,
-                userId: session!.user.id,
-            },
-        })
-        revalidatePath(`/complaints/${complaintId}`)
-    }
 
     return (
         <main className="min-h-screen bg-background">
@@ -375,7 +339,18 @@ export default async function ComplaintDetailPage({
                             <div className="space-y-5 mb-6">
                                 {complaint.commentList.map((comment, i) => (
                                     <div key={comment.id}>
-                                        <CommentItem comment={comment} />
+                                        <CommentItem comment={{
+                                            id: comment.id,
+                                            description: comment.description,
+                                            complaintId: comment.complaintId,
+                                            user: {
+                                                id: comment.userId,
+                                                name: comment.user.name,
+                                                email: comment.user.email
+                                            },
+                                            createdAt: comment.createdAt,
+                                            updatedAt: comment.updatedAt
+                                        }} />
                                         {i < complaint.commentList.length - 1 && (
                                             <Separator className="mt-5" />
                                         )}
@@ -398,7 +373,7 @@ export default async function ComplaintDetailPage({
                                 name: session.user.name ?? "User",
                                 email: session.user.email ?? "",
                             }}
-                            onSubmit={submitComment}
+                            
                         />
                     </div>
                 </div>

@@ -5,6 +5,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { SendHorizonal, Loader2 } from "lucide-react"
+import { createComment } from "@/app/complaints/[id]/action"
 
 interface CommentBoxProps {
     complaintId: string
@@ -12,11 +13,9 @@ interface CommentBoxProps {
         name: string
         email: string
     }
-    // Pass your server action here
-    onSubmit: (complaintId: string, text: string) => Promise<void>
 }
 
-export function CommentBox({ complaintId, currentUser, onSubmit }: CommentBoxProps) {
+export function CommentBox({ complaintId, currentUser }: CommentBoxProps) {
     const [text, setText] = useState("")
     const [loading, setLoading] = useState(false)
 
@@ -27,12 +26,12 @@ export function CommentBox({ complaintId, currentUser, onSubmit }: CommentBoxPro
         .toUpperCase()
         .slice(0, 2)
 
-    const handleSubmit = async () => {
+    const handleCreateComment = async () => {
         const trimmed = text.trim()
         if (!trimmed) return
         setLoading(true)
         try {
-            await onSubmit(complaintId, trimmed)
+            const response = await createComment(complaintId, text)
             setText("")
         } finally {
             setLoading(false)
@@ -42,7 +41,7 @@ export function CommentBox({ complaintId, currentUser, onSubmit }: CommentBoxPro
     const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
         if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
             e.preventDefault()
-            handleSubmit()
+            handleCreateComment()
         }
     }
 
@@ -69,7 +68,7 @@ export function CommentBox({ complaintId, currentUser, onSubmit }: CommentBoxPro
                         </span>
                         <Button
                             size="sm"
-                            onClick={handleSubmit}
+                            onClick={handleCreateComment}
                             disabled={!text.trim() || loading}
                             className="h-7 px-3 text-xs gap-1.5"
                         >
