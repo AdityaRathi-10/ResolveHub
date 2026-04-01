@@ -400,3 +400,72 @@ export async function closeComplaint(
     message: "Complaint closed successfully"
   }
 }
+
+export async function createComment(complaintId: string, text: string) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user) throw new Error("Unauthorized");
+
+  await prisma.comment.create({
+      data: {
+          description: text,
+          complaintId,
+          userId: session.user.id,
+      },
+  })
+  revalidatePath(`/complaints/${complaintId}`)
+
+  return {
+    success: true,
+    message: "Comment added successfully"
+  }
+}
+
+export async function editComment(complaintId: string, commentId: string, commentedBy: string, text: string) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user || session.user.id !== commentedBy) {
+    throw new Error("Unauthorized");
+  }
+
+  const editedComment = await prisma.comment.update({
+      where: {
+        id: commentId
+      },
+      data: {
+          description: text,
+      },
+  })
+
+  if(!editedComment) {
+    return {
+      success: false,
+      message: "Error editing comment"
+    }
+  }
+
+  revalidatePath(`/complaints/${complaintId}`)
+
+  return {
+    success: true,
+    message: "Comment edited successfully"
+  }
+}
+
+export async function deleteComment(complaintId: string, commentId: string, commentedBy: string) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user || session.user.id !== commentedBy) {
+    throw new Error("Unauthorized");
+  }
+
+  await prisma.comment.delete({
+    where: {
+      id: commentId
+    }
+  })
+
+  revalidatePath(`/complaints/${complaintId}`)
+
+  return {
+    success: true,
+    message: "Comment deleted successfully"
+  }
+}
