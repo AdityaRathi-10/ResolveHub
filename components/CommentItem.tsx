@@ -11,7 +11,6 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "./ui/dropdown-menu"
-import { deleteComment, editComment } from "@/app/complaints/[id]/action"
 import { useState } from "react"
 import { useSession } from "next-auth/react"
 import { redirect } from "next/navigation"
@@ -34,38 +33,34 @@ function initials(name: string) {
     return name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
 }
 
-export default function CommentItem({ comment }: { comment: CommentDetails[number] }) {
+export default function CommentItem({ comment, onEdit, onDelete }: { 
+    comment: CommentDetails[number] 
+    onEdit: (commentId: string, description: string) => Promise<void>
+    onDelete: (commentId: string) => Promise<void>
+}) {
     const [text, setText] = useState("")
     const [loading, setLoading] = useState(false)
     const [isEditing, setIsEditing] = useState(false)
-    const { data: session } = useSession()
+    const { data: session, status } = useSession()
 
-    const { id, description, complaintId, user, createdAt, updatedAt } = comment
+    const { description, user, createdAt, updatedAt } = comment
 
-    const isOwner = session?.user?.id === user.id
+    const isCommenter = session?.user?.id === user.id
     const isEdited = updatedAt > createdAt
 
     const handleEditComment = async () => {
         const trimmed = text.trim()
         if (!trimmed) return
         setLoading(true)
-        try {
-            const response = await editComment(complaintId, id, user.id, text)
-            console.log("Res", response)
-            setIsEditing(false)
-        } finally {
-            setLoading(false)
-        }
+        await onEdit(comment.id, trimmed)
+        setLoading(false)
+        setIsEditing(false)
     }
 
     const handleDeleteComment = async () => {
         setLoading(true)
-        try {
-            const response = await deleteComment(complaintId, id, user.id)
-            console.log("Res", response)
-        } finally {
-            setLoading(false)
-        }
+        await onDelete(comment.id)
+        setLoading(false)
     }
 
     const openEdit = () => {
@@ -77,6 +72,8 @@ export default function CommentItem({ comment }: { comment: CommentDetails[numbe
         setText("")
         setIsEditing(false)
     }
+
+    if(status === "loading") return null
 
     if (!session?.user) redirect("/sign-in")
 
@@ -108,7 +105,7 @@ export default function CommentItem({ comment }: { comment: CommentDetails[numbe
                     </div>
 
                     {/* Dropdown — only visible to comment owner */}
-                    {isOwner && !isEditing && (
+                    {isCommenter && !isEditing && (
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <Button

@@ -5,7 +5,6 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { SendHorizonal, Loader2 } from "lucide-react"
-import { createComment } from "@/app/complaints/[id]/action"
 
 interface CommentBoxProps {
     complaintId: string
@@ -13,9 +12,10 @@ interface CommentBoxProps {
         name: string
         email: string
     }
+    onCreate: (description: string) => Promise<void>
 }
 
-export function CommentBox({ complaintId, currentUser }: CommentBoxProps) {
+export function CommentBox({ currentUser, onCreate }: CommentBoxProps) {
     const [text, setText] = useState("")
     const [loading, setLoading] = useState(false)
 
@@ -29,13 +29,10 @@ export function CommentBox({ complaintId, currentUser }: CommentBoxProps) {
     const handleCreateComment = async () => {
         const trimmed = text.trim()
         if (!trimmed) return
+        setText("")
         setLoading(true)
-        try {
-            const response = await createComment(complaintId, text)
-            setText("")
-        } finally {
-            setLoading(false)
-        }
+        await onCreate(text)
+        setLoading(false)
     }
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
