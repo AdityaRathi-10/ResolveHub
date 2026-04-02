@@ -8,7 +8,6 @@ export async function middleware(request: NextRequest) {
     })
     const url = request.nextUrl.pathname
     if(token && (
-        url === "/" ||
         url.startsWith("/sign-in") ||
         url.startsWith("/sign-up")
     )) {
@@ -26,10 +25,9 @@ export async function middleware(request: NextRequest) {
 
 export const config = { 
     matcher: [
-        "/",
         "/sign-in",
         "/sign-up",
+        "/complaints",
         "/complaints/:path*",
-        "/complaint/:path*",
     ]
 }
