@@ -6,7 +6,6 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { MediaGallery } from "@/components/MediaGallery"
-import { CommentBox } from "@/components/CommentBox"
 import {
     ArrowLeft,
     Clock,
@@ -15,7 +14,6 @@ import {
     XCircle,
     CalendarClock,
     UserCheck,
-    MessageSquare,
     ShieldCheck,
     Image as ImageIcon,
     TrendingUp,
@@ -25,40 +23,11 @@ import UpVotes from "@/components/Upvotes"
 import ComplaintActivityButton from "@/components/ComplaintActivityButton"
 import ComplaintAudit from "@/components/ComplaintAudit"
 import { ResolutionCard } from "@/components/ResolutionCard"
-import CommentItem from "@/components/CommentItem"
+import CommentsSection from "@/components/CommentsSection"
+import { formatDistanceToNowStrict } from "date-fns"
 
 type Priority = "HIGH" | "MEDIUM" | "LOW"
 type Status = "PENDING" | "IN_PROGRESS" | "RESOLVED" | "CLOSED"
-type ResolutionStatus = "PENDING" | "APPROVED" | "REJECTED"
-
-type ComplaintDetail = {
-    id: string
-    title: string
-    description?: string | null
-    media: string[]
-    priority: Priority
-    status: Status
-    upvotesCount: number
-    deadline?: Date | null
-    createdAt: Date
-    updatedAt: Date
-    user: { id: string; name: string; email: string }
-    assignedTo?: { id: string; name: string; email: string } | null
-    commentList: {
-        id: string
-        description: string
-        createdAt: Date
-        user: { name: string; email: string }
-    }[]
-    resolutions: {
-        id: string
-        description?: string | null
-        media: string[]
-        status: ResolutionStatus
-        createdAt: Date
-        caretaker: { name: string; email: string }
-    }[]
-}
 
 // Configs
 
@@ -110,8 +79,8 @@ export default async function ComplaintDetailPage({
             user: { select: { id: true, name: true, email: true } },
             assignedTo: { select: { id: true, name: true, email: true } },
             commentList: {
-                include: { user: { select: { name: true, email: true } } },
-                orderBy: { createdAt: "asc" },
+                include: { user: { select: { id: true, name: true, email: true } } },
+                orderBy: { createdAt: "desc" },
             },
             resolutions: {
                 include: { caretaker: { select: { name: true, email: true } } },
@@ -187,7 +156,7 @@ export default async function ComplaintDetailPage({
                             {/* Title */}
                             <h1
                                 className="text-xl sm:text-2xl font-bold text-foreground leading-snug mb-4"
-                                style={{ fontFamily: "'Sora', sans-serif" }}
+
                             >
                                 {complaint.title}
                             </h1>
@@ -256,7 +225,7 @@ export default async function ComplaintDetailPage({
                             {/* Timestamps */}
                             <div className="mt-4 pt-3 border-t border-border/40">
                                 <span className="text-xs text-muted-foreground">
-                                    Created {complaint.createdAt.toLocaleString()}
+                                    Created {formatDistanceToNowStrict(new Date(complaint.createdAt), { addSuffix: true })}
                                 </span>
                             </div>
                         </div>
@@ -267,7 +236,7 @@ export default async function ComplaintDetailPage({
                         <div className="bg-card border border-border rounded-2xl p-5">
                             <div className="flex items-center gap-2 mb-4">
                                 <ImageIcon className="h-4 w-4 text-muted-foreground" />
-                                <h2 className="text-sm font-semibold text-foreground" style={{ fontFamily: "'Sora', sans-serif" }}>
+                                <h2 className="text-sm font-semibold text-foreground" >
                                     Attachments
                                 </h2>
                                 <span className="ml-auto text-xs text-muted-foreground">
@@ -283,7 +252,7 @@ export default async function ComplaintDetailPage({
                         <div className="bg-card border border-border rounded-2xl p-5">
                             <div className="flex items-center gap-2 mb-4">
                                 <ShieldCheck className="h-4 w-4 text-primary" />
-                                <h2 className="text-sm font-semibold text-foreground" style={{ fontFamily: "'Sora', sans-serif" }}>
+                                <h2 className="text-sm font-semibold text-foreground" >
                                     Resolutions
                                 </h2>
                                 <Badge variant="secondary" className="ml-auto text-xs">
@@ -293,20 +262,20 @@ export default async function ComplaintDetailPage({
                             <div className="space-y-3">
                                 {complaint.resolutions.map((res, index) => (
                                     <>
-                                    <ResolutionCard
-                                        key={res.id}
-                                        resolution={res}
-                                        attemptIndex={index + 1}
-                                        total={complaint.resolutions.length}
-                                        canReview={
-                                            session.user.role === "STUDENT" &&
-                                            session.user.id === complaint.user.id &&
-                                            res.status === "PENDING"
-                                        }
-                                        complaintId={complaint.id}
-                                        studentId={complaint.userId}
-                                        caretakerId={complaint.assignedToId}
-                                    />
+                                        <ResolutionCard
+                                            key={res.id}
+                                            resolution={res}
+                                            attemptIndex={index + 1}
+                                            total={complaint.resolutions.length}
+                                            canReview={
+                                                session.user.role === "STUDENT" &&
+                                                session.user.id === complaint.user.id &&
+                                                res.status === "PENDING"
+                                            }
+                                            complaintId={complaint.id}
+                                            studentId={complaint.userId}
+                                            caretakerId={complaint.assignedToId}
+                                        />
                                     </>
                                 ))}
                             </div>
@@ -322,60 +291,10 @@ export default async function ComplaintDetailPage({
 
                     <Separator className="mb-5" />
 
-                    {/* Comments */}
-                    <div className="bg-card border border-border rounded-2xl p-5">
-                        <div className="flex items-center gap-2 mb-5">
-                            <MessageSquare className="h-4 w-4 text-muted-foreground" />
-                            <h2 className="text-sm font-semibold text-foreground" style={{ fontFamily: "'Sora', sans-serif" }}>
-                                Discussion
-                            </h2>
-                            <Badge variant="secondary" className="ml-auto text-xs">
-                                {complaint.commentList.length}
-                            </Badge>
-                        </div>
-
-                        {/* Existing comments */}
-                        {complaint.commentList.length > 0 ? (
-                            <div className="space-y-5 mb-6">
-                                {complaint.commentList.map((comment, i) => (
-                                    <div key={comment.id}>
-                                        <CommentItem comment={{
-                                            id: comment.id,
-                                            description: comment.description,
-                                            complaintId: comment.complaintId,
-                                            user: {
-                                                id: comment.userId,
-                                                name: comment.user.name,
-                                                email: comment.user.email
-                                            },
-                                            createdAt: comment.createdAt,
-                                            updatedAt: comment.updatedAt
-                                        }} />
-                                        {i < complaint.commentList.length - 1 && (
-                                            <Separator className="mt-5" />
-                                        )}
-                                    </div>
-                                ))}
-                            </div>
-                        ) : (
-                            <div className="text-center py-8 mb-4">
-                                <MessageSquare className="h-8 w-8 text-muted-foreground/30 mx-auto mb-2" />
-                                <p className="text-sm text-muted-foreground">No comments yet. Be the first to comment.</p>
-                            </div>
-                        )}
-
-                        <Separator className="mb-5" />
-
-                        {/* Comment box */}
-                        <CommentBox
-                            complaintId={complaint.id}
-                            currentUser={{
-                                name: session.user.name ?? "User",
-                                email: session.user.email ?? "",
-                            }}
-                            
-                        />
-                    </div>
+                    <CommentsSection
+                        comments={complaint.commentList}
+                        complaintId={complaint.id}
+                    />
                 </div>
             </div>
         </main>

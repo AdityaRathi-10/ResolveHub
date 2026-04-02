@@ -282,7 +282,7 @@ export async function approveResolution(
     updatedComplaint.createdAt,
   );
 
-  if(!caretakerId) {
+  if (!caretakerId) {
     return {
       success: false,
       message: "Unauthorized",
@@ -365,25 +365,25 @@ export async function disapproveResolution(
 
 export async function closeComplaint(
   complaintId: string,
-  actorId: string | null
+  actorId: string | null,
 ) {
   const session = await getServerSession(authOptions);
   if (!session?.user || !actorId) throw new Error("Unauthorized");
 
   const updatedComplaint = await prisma.complaint.update({
     where: {
-      id: complaintId
+      id: complaintId,
     },
     data: {
-      status: "CLOSED"
-    }
-  })
+      status: "CLOSED",
+    },
+  });
 
-  if(!updatedComplaint) {
+  if (!updatedComplaint) {
     return {
       success: false,
-      message: "Error closing complaint"
-    }
+      message: "Error closing complaint",
+    };
   }
 
   await prisma.complaintAudit.create({
@@ -391,81 +391,105 @@ export async function closeComplaint(
       actorId,
       complaintId,
       type: "STATUS_CHANGED",
-      message: "Complaint Closed!"
-    }
-  })
+      message: "Complaint Closed!",
+    },
+  });
 
   return {
     success: true,
-    message: "Complaint closed successfully"
-  }
+    message: "Complaint closed successfully",
+  };
 }
 
 export async function createComment(complaintId: string, text: string) {
   const session = await getServerSession(authOptions);
   if (!session?.user) throw new Error("Unauthorized");
 
-  await prisma.comment.create({
-      data: {
-          description: text,
-          complaintId,
-          userId: session.user.id,
+  const newComment = await prisma.comment.create({
+    data: {
+      description: text,
+      complaintId,
+      userId: session.user.id,
+    },
+    include: {
+      user: {
+        select: { name: true, email: true },
       },
-  })
-  revalidatePath(`/complaints/${complaintId}`)
+    },
+  });
+
+  if (!newComment) {
+    return {
+      success: false,
+      message: "Error creating comment",
+    };
+  }
 
   return {
     success: true,
-    message: "Comment added successfully"
-  }
+    message: "Comment added successfully",
+    data: newComment,
+  };
 }
 
-export async function editComment(complaintId: string, commentId: string, commentedBy: string, text: string) {
+export async function editComment(
+  commentId: string,
+  commentedBy: string,
+  text: string,
+) {
   const session = await getServerSession(authOptions);
   if (!session?.user || session.user.id !== commentedBy) {
     throw new Error("Unauthorized");
   }
 
   const editedComment = await prisma.comment.update({
-      where: {
-        id: commentId
-      },
-      data: {
-          description: text,
-      },
-  })
+    where: {
+      id: commentId,
+    },
+    data: {
+      description: text,
+    },
+  });
 
-  if(!editedComment) {
+  if (!editedComment) {
     return {
       success: false,
-      message: "Error editing comment"
-    }
+      message: "Error editing comment",
+    };
   }
-
-  revalidatePath(`/complaints/${complaintId}`)
 
   return {
     success: true,
-    message: "Comment edited successfully"
-  }
+    message: "Comment edited successfully",
+    data: editedComment,
+  };
 }
 
-export async function deleteComment(complaintId: string, commentId: string, commentedBy: string) {
+export async function deleteComment(
+  commentId: string,
+  commentedBy: string,
+) {
   const session = await getServerSession(authOptions);
   if (!session?.user || session.user.id !== commentedBy) {
     throw new Error("Unauthorized");
   }
 
-  await prisma.comment.delete({
+  const deletedComment = await prisma.comment.delete({
     where: {
-      id: commentId
-    }
-  })
+      id: commentId,
+    },
+  });
 
-  revalidatePath(`/complaints/${complaintId}`)
+  if (!deletedComment) {
+    return {
+      success: false,
+      message: "Error deleting comment",
+    };
+  }
 
   return {
     success: true,
-    message: "Comment deleted successfully"
-  }
+    message: "Comment deleted successfully",
+    data: deletedComment.id,
+  };
 }
