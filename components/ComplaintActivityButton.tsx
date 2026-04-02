@@ -4,7 +4,6 @@ import React, { useState } from 'react'
 import { Button } from './ui/button'
 import { assignComplaint, closeComplaint, startWorkingOnComplaint, unassignComplaint } from '@/app/complaints/[id]/action'
 import { useSession } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
 import { Loader2 } from 'lucide-react'
 
 interface AssignComplaintProps {
@@ -21,7 +20,6 @@ export default function ComplaintActivityButton({ assigned, complaintId, assigne
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [isClosed, setIsClosed] = useState(false)
     const { data: session } = useSession()
-    const router = useRouter()
 
     const isCreatorOfComplaint = session?.user.role === "STUDENT" && session?.user.id === createdBy
     const isAssignedCaretakerOfComplaint = session?.user.role === "CARETAKER" && session.user.id === currentAssignedTo
@@ -40,7 +38,6 @@ export default function ComplaintActivityButton({ assigned, complaintId, assigne
             console.log("Error: ", error)
         } finally {
             setIsSubmitting(false)
-            router.refresh()
         }
     }
 
@@ -56,7 +53,6 @@ export default function ComplaintActivityButton({ assigned, complaintId, assigne
             console.log("Error: ", error)
         } finally {
             setIsSubmitting(false)
-            router.refresh()
         }
     }
 
@@ -80,9 +76,10 @@ export default function ComplaintActivityButton({ assigned, complaintId, assigne
             console.log("Error: ", error)
         } finally {
             setIsSubmitting(false)
-            router.refresh()
         }
     }
+
+    if(status === "loading") return null
 
     if ((isCreatorOfComplaint && status !== "RESOLVED") || status === "CLOSED") {
         return null

@@ -11,6 +11,7 @@ import {
     Paperclip,
     CalendarClock,
     TrendingUp,
+    UserCheck,
 } from "lucide-react"
 import { escalateComplaints } from "@/lib/escalateComplaint"
 import { formatDistanceToNowStrict } from "date-fns"
@@ -30,9 +31,9 @@ export type ComplaintCardData = {
         email: string
     }
     isEscalated: boolean
-    // assignedTo?: {
-    //     name: string
-    // } | null
+    assignedTo?: {
+        name: string
+    } | null
     _count: {
         commentList: number
         resolutions: number
@@ -84,7 +85,7 @@ const STATUS_CONFIG = {
     },
 }
 
-export async function ComplaintCard({complaint}: {complaint: ComplaintCardData}) {
+export async function ComplaintCard({ complaint }: { complaint: ComplaintCardData }) {
     const priority = PRIORITY_CONFIG[complaint.priority]
     const status = STATUS_CONFIG[complaint.status]
     const StatusIcon = status.icon
@@ -108,7 +109,7 @@ export async function ComplaintCard({complaint}: {complaint: ComplaintCardData})
                 <div className="pl-3">
                     {/* Top row: status + priority + time */}
                     <div className="flex items-center justify-between gap-2 mb-3">
-                        { complaint.isEscalated && 
+                        {complaint.isEscalated &&
                             <div className={`inline-flex items-center gap-1.5 text-xs font-medium px-2 py-1 rounded-lg bg-purple-200 text-purple-800`}>
                                 <TrendingUp className="h-3 w-3" />
                                 Escalated
@@ -133,7 +134,6 @@ export async function ComplaintCard({complaint}: {complaint: ComplaintCardData})
                     {/* Title */}
                     <h3
                         className="font-semibold text-sm text-foreground group-hover:text-primary transition-colors line-clamp-2 mb-1.5 leading-snug"
-                        style={{ fontFamily: "'Sora', sans-serif" }}
                     >
                         {complaint.title}
                     </h3>
@@ -175,12 +175,12 @@ export async function ComplaintCard({complaint}: {complaint: ComplaintCardData})
 
                         {/* Meta: upvotes, comments, attachments, assignee */}
                         <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                            {/* {complaint.assignedTo && (
+                            {complaint.assignedTo && (
                                 <span className="hidden sm:flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
                                     <UserCheck className="h-3.5 w-3.5" />
                                     {complaint.assignedTo.name.split(" ")[0]}
                                 </span>
-                            )} */}
+                            )}
                             {complaint.media.length > 0 && (
                                 <span className="flex items-center gap-1">
                                     <Paperclip className="h-3.5 w-3.5" />

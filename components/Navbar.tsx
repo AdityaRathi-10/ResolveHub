@@ -18,20 +18,22 @@ const ROLE_STYLES: Record<ROLE, string> = {
 }
 
 export default function Navbar() {
-    const { data } = useSession()
+    const { data: session, status } = useSession()
     const pathname = usePathname()
     const [profileOpen, setProfileOpen] = useState(false)
     const [mobileOpen, setMobileOpen] = useState(false)
 
     if (AUTH_ROUTES.includes(pathname)) return null
 
-    const user = data?.user
+    const user = session?.user
     const role = user?.role as ROLE | undefined
     const navLinks = role ? NAV_ITEMS[role] : []
 
     const initials = user?.name
         ? user.name.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2)
         : "U"
+
+    if(status === "loading") return null
 
     return (
         <header className="sticky top-0 z-50 w-full border-b border-border bg-background/80 backdrop-blur-xl">
@@ -45,7 +47,7 @@ export default function Navbar() {
                         </div>
                         <span
                             className="font-semibold text-base tracking-tight text-foreground"
-                            style={{ fontFamily: "'Sora', sans-serif" }}
+                            
                         >
                             ResolveIt
                         </span>
@@ -90,7 +92,7 @@ export default function Navbar() {
                                     <div className="h-8 w-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center">
                                         <span
                                             className="text-xs font-bold text-primary"
-                                            style={{ fontFamily: "'Sora', sans-serif" }}
+                                            
                                         >
                                             {initials}
                                         </span>
@@ -187,7 +189,7 @@ export default function Navbar() {
                         <div className="pt-2 mt-2 border-t border-border">
                             <div className="flex items-center gap-3 px-3 py-2 mb-1">
                                 <div className="h-8 w-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
-                                    <span className="text-xs font-bold text-primary" style={{ fontFamily: "'Sora', sans-serif" }}>
+                                    <span className="text-xs font-bold text-primary" >
                                         {initials}
                                     </span>
                                 </div>
