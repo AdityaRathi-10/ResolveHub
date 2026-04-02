@@ -171,10 +171,7 @@ function DisapproveModal({
                             <ThumbsDown className="h-4.5 w-4.5 text-red-500" />
                         </div>
                         <div>
-                            <h2
-                                className="text-base font-semibold text-foreground"
-                                style={{ fontFamily: "'Sora', sans-serif" }}
-                            >
+                            <h2 className="text-base font-semibold text-foreground">
                                 Disapprove Resolution
                             </h2>
                             <p className="text-xs text-muted-foreground mt-0.5">

@@ -1,4 +1,3 @@
-import React from 'react'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '../api/auth/[...nextauth]/options'
 import { prisma } from '@/lib/prisma'
@@ -112,10 +111,7 @@ export default async function LeaderBoard() {
                         <Trophy className="h-5 w-5 text-yellow-500" />
                     </div>
                     <div>
-                        <h1
-                            className="text-2xl font-bold text-foreground leading-tight"
-                            style={{ fontFamily: "'Sora', sans-serif" }}
-                        >
+                        <h1 className="text-2xl font-bold text-foreground leading-tight">
                             Leaderboard
                         </h1>
                         <p className="text-sm text-muted-foreground">
@@ -138,10 +134,7 @@ export default async function LeaderBoard() {
                                     <Icon className={`h-4 w-4 ${iconClass}`} />
                                 </div>
                                 <div className="min-w-0">
-                                    <p
-                                        className="text-xl font-bold text-foreground leading-none tabular-nums"
-                                        style={{ fontFamily: "'Sora', sans-serif" }}
-                                    >
+                                    <p className="text-xl font-bold text-foreground leading-none tabular-nums">
                                         {value}
                                     </p>
                                     <p className="text-xs text-muted-foreground mt-1 truncate">{label}</p>
@@ -154,10 +147,7 @@ export default async function LeaderBoard() {
                 {/* Rankings table */}
                 <Card className="rounded-2xl border border-border shadow-none overflow-hidden p-0">
                     <CardHeader className="px-6 py-4 border-b border-border bg-muted/20">
-                        <CardTitle
-                            className="text-sm font-semibold text-foreground"
-                            style={{ fontFamily: "'Sora', sans-serif" }}
-                        >
+                        <CardTitle className="text-sm font-semibold text-foreground">
                             Rankings
                         </CardTitle>
                     </CardHeader>

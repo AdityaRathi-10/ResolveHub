@@ -90,10 +90,7 @@ function ResolutionModal({
                                 <ShieldCheck className="h-4.5 w-4.5 text-emerald-500" />
                             </div>
                             <div>
-                                <h2
-                                    className="text-base font-semibold text-foreground leading-snug"
-                                    style={{ fontFamily: "'Sora', sans-serif" }}
-                                >
+                                <h2 className="text-base font-semibold text-foreground leading-snug">
                                     Submit Resolution Proof
                                 </h2>
                                 <p className="text-xs text-muted-foreground mt-0.5">

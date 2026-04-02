@@ -90,7 +90,6 @@ function StatCard({
             <div className="min-w-0">
                 <p
                     className="text-2xl font-bold text-foreground leading-none"
-                    style={{ fontFamily: "'Sora', sans-serif" }}
                 >
                     {value}
                 </p>
@@ -137,7 +136,7 @@ function ComplaintRow({
                         <div className="min-w-0">
                             <h3
                                 className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors line-clamp-1 leading-snug"
-                                style={{ fontFamily: "'Sora', sans-serif" }}
+
                             >
                                 {complaint.title}
                             </h3>
@@ -236,7 +235,7 @@ function EmptyState({ role }: { role: "STUDENT" | "CARETAKER" }) {
             <div className="h-16 w-16 rounded-2xl bg-muted flex items-center justify-center mb-5">
                 <ClipboardList className="h-7 w-7 text-muted-foreground/50" />
             </div>
-            <h3 className="font-semibold text-foreground mb-2" style={{ fontFamily: "'Sora', sans-serif" }}>
+            <h3 className="font-semibold text-foreground mb-2" >
                 {role === "STUDENT" ? "No complaints yet" : "No assigned complaints"}
             </h3>
             <p className="text-sm text-muted-foreground max-w-xs leading-relaxed">
@@ -320,18 +319,18 @@ export default async function MyComplaintsPage() {
                     <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                         <div className="flex items-center gap-4">
                             <Avatar className="h-14 w-14 border-2 border-border">
-                                <AvatarFallback className="text-lg font-bold bg-primary/10 text-primary" style={{ fontFamily: "'Sora', sans-serif" }}>
+                                <AvatarFallback className="text-lg font-bold bg-primary/10 text-primary" >
                                     {session.user.name?.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2) ?? "U"}
                                 </AvatarFallback>
                             </Avatar>
                             <div>
                                 <div className="flex items-center gap-2 mb-0.5">
-                                    <h1 className="text-xl font-bold text-foreground" style={{ fontFamily: "'Sora', sans-serif" }}>
+                                    <h1 className="text-xl font-bold text-foreground" >
                                         Hey, {userName}
                                     </h1>
                                     <span className={`text-xs font-medium px-2 py-0.5 rounded-full border ${isStudent
-                                            ? "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20"
-                                            : "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
+                                        ? "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20"
+                                        : "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
                                         }`}>
                                         {role}
                                     </span>
@@ -445,8 +444,8 @@ export default async function MyComplaintsPage() {
                 {total > 0 && (
                     <p className="text-center text-xs text-muted-foreground/50 mt-6">
                         {isStudent
-                            ? "Showing all your submitted complaints · sorted by status"
-                            : "Showing all complaints assigned to you · sorted by status"}
+                            ? "Showing all your submitted complaints"
+                            : "Showing all complaints assigned to you"}
                     </p>
                 )}
             </div>

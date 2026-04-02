@@ -1,6 +1,5 @@
 "use client"
 
-import React from 'react'
 import { Button } from '@/components/ui/button'
 import { Field, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
@@ -53,17 +52,12 @@ function SignIn() {
                         <div className="h-10 w-10 rounded-xl bg-primary flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform duration-200">
                             <Zap className="h-5 w-5 text-white" />
                         </div>
-                        <span
-                            className="font-semibold text-xl tracking-tight text-foreground"
-                            style={{ fontFamily: "'Sora', sans-serif" }}
-                        >
+                        <span className="font-semibold text-xl tracking-tight text-foreground">
                             ResolveIt
                         </span>
                     </Link>
                     <h1
-                        className="text-2xl font-bold text-foreground mt-4"
-                        style={{ fontFamily: "'Sora', sans-serif" }}
-                    >
+                        className="text-2xl font-bold text-foreground mt-4">
                         Welcome back
                     </h1>
                     <p className="text-sm text-muted-foreground mt-1">

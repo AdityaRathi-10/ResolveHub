@@ -85,7 +85,7 @@ export function MediaGallery({ urls }: MediaGalleryProps) {
                             {/* Count badge on last tile when overflow */}
                             {i === 3 && urls.length > 4 && (
                                 <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-xl">
-                                    <span className="text-white text-xl font-bold" style={{ fontFamily: "'Sora', sans-serif" }}>
+                                    <span className="text-white text-xl font-bold" >
                                         +{urls.length - 4}
                                     </span>
                                 </div>

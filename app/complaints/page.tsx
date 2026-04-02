@@ -34,7 +34,7 @@ function StatPill({
                 <Icon className="h-4 w-4" />
             </div>
             <div>
-                <p className="text-lg font-bold text-foreground leading-none" style={{ fontFamily: "'Sora', sans-serif" }}>
+                <p className="text-lg font-bold text-foreground leading-none" >
                     {count}
                 </p>
                 <p className="text-xs text-muted-foreground mt-0.5">{label}</p>
@@ -115,10 +115,7 @@ export default async function ComplaintsPage({ searchParams }: ComplaintsPagePro
                 {/* Header */}
                 <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-6">
                     <div>
-                        <h1
-                            className="text-2xl font-bold text-foreground"
-                            style={{ fontFamily: "'Sora', sans-serif" }}
-                        >
+                        <h1 className="text-2xl font-bold text-foreground">
                             Complaints
                         </h1>
                     </div>
@@ -168,7 +165,7 @@ export default async function ComplaintsPage({ searchParams }: ComplaintsPagePro
                         <div className="h-14 w-14 rounded-2xl bg-muted flex items-center justify-center mb-4">
                             <SlidersHorizontal className="h-6 w-6 text-muted-foreground" />
                         </div>
-                        <h3 className="font-semibold text-foreground mb-1" style={{ fontFamily: "'Sora', sans-serif" }}>
+                        <h3 className="font-semibold text-foreground mb-1" >
                             No complaints found
                         </h3>
                         <p className="text-sm text-muted-foreground max-w-xs">
