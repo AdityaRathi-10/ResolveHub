@@ -465,10 +465,7 @@ export async function editComment(
   };
 }
 
-export async function deleteComment(
-  commentId: string,
-  commentedBy: string,
-) {
+export async function deleteComment(commentId: string, commentedBy: string) {
   const session = await getServerSession(authOptions);
   if (!session?.user || session.user.id !== commentedBy) {
     throw new Error("Unauthorized");
@@ -491,5 +488,42 @@ export async function deleteComment(
     success: true,
     message: "Comment deleted successfully",
     data: deletedComment.id,
+  };
+}
+
+export async function deleteComplaint(complaintId: string, authorId: string) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user || session.user.id !== authorId) {
+    throw new Error("Unauthorized");
+  }
+
+  await prisma.comment.deleteMany({
+    where: { complaintId },
+  });
+
+  await prisma.complaintAudit.deleteMany({
+    where: { complaintId },
+  });
+
+  await prisma.upvotes.deleteMany({
+    where: { complaintId },
+  });
+
+  const deletedComplaint = await prisma.complaint.delete({
+    where: { id: complaintId },
+  });
+
+  if (!deletedComplaint) {
+    return {
+      success: false,
+      message: "Error deleting complaint",
+    };
+  }
+
+  revalidatePath("/complaints");
+
+  return {
+    success: true,
+    message: "Complaint deleted successfully",
   };
 }
