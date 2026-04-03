@@ -197,7 +197,7 @@ export default async function HomePage() {
       <footer className="border-t border-border">
         <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-8 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <div className="h-6 w-6 rounded-md bg-primary flex items-center justify-center">
+            <div className="h-6 w-6 rounded-md bg-purple-900 flex items-center justify-center">
               <Zap className="h-3 w-3 text-white" />
             </div>
             <span className="text-sm font-semibold text-foreground">ResolveIt</span>
