@@ -51,33 +51,9 @@ export default async function ComplaintsPage({ searchParams }: ComplaintsPagePro
     const activeStatus = status ?? "all"
 
     const role = session.user.role as "STUDENT" | "CARETAKER" | "SUPERVISOR"
-    const where: any = {}
 
-    if (status && status !== "All" && status !== "escalated") {
-        where.status = status.replaceAll(" ", "_").toUpperCase()
-    }
-
-    if(status === "escalated") {
-        if(session.user.role !== "SUPERVISOR") {
-            redirect("/complaints")
-        }
-        where.isEscalated = true
-    }
-
-    if (priority && priority !== "All") {
-        where.priority = priority.toUpperCase()
-    }
-
-    const orderBy: any = {}
-
-    if (sort === "newest") orderBy.createdAt = "desc"
-    else if (sort === "oldest") orderBy.createdAt = "asc"
-    else if (sort === "upvotes") orderBy.upvotes = "desc"
-    else orderBy.createdAt = "desc"
-
-    const complaints = await prisma.complaint.findMany({
-        where,
-        orderBy,
+    // Fetch all complaints for stats
+    const allComplaints = await prisma.complaint.findMany({
         include: {
             user: true,
             assignedTo: true,
@@ -85,28 +61,43 @@ export default async function ComplaintsPage({ searchParams }: ComplaintsPagePro
                 select: {
                     commentList: true,
                     resolutions: true,
-                },
-            },
-        },
+                    upvotes: true
+                }
+            }
+        }
     })
 
-    const stat = activeStatus !== "all" ? activeStatus?.replaceAll(" ", "_").toUpperCase() : null
-    const filterComplaints = complaints.filter((complaint) => {
-        if (activeStatus === "all") {
-            return complaint.status !== "CLOSED"
-        }
-        if (activeStatus === "closed") {
-            return complaint.status === "CLOSED"
-        }
-        return complaint.status === stat
-    })
-
+    // Compute static stats
     const stats = {
-        total: complaints.length,
-        pending: complaints.filter((c) => c.status === "PENDING").length,
-        inProgress: complaints.filter((c) => c.status === "IN_PROGRESS").length,
-        resolved: complaints.filter((c) => c.status === "RESOLVED" || c.status === "CLOSED").length,
+        total: allComplaints.length,
+        pending: allComplaints.filter(c => c.status === "PENDING").length,
+        inProgress: allComplaints.filter(c => c.status === "IN_PROGRESS").length,
+        resolved: allComplaints.filter(c => c.status === "RESOLVED" || c.status === "CLOSED").length
     }
+
+    // Now fetch filtered complaints only for rendering
+    let filteredComplaints = [...allComplaints]
+
+    if(!status || status === "all") {
+        filteredComplaints = filteredComplaints.filter(c => c.status !== "CLOSED")
+    }
+
+    // Apply status filter
+    if (status && status !== "all") {
+        if (status === "escalated") filteredComplaints = filteredComplaints.filter(c => c.isEscalated)
+        else if (status === "closed") filteredComplaints = filteredComplaints.filter(c => c.status === "CLOSED")
+        else filteredComplaints = filteredComplaints.filter(c => c.status === status.replaceAll(" ", "_").toUpperCase())
+    }
+
+    // Apply priority filter
+    if (priority && priority !== "All") {
+        filteredComplaints = filteredComplaints.filter(c => c.priority === priority.toUpperCase())
+    }
+
+    // Apply sorting
+    if (sort === "newest") filteredComplaints.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+    else if (sort === "oldest") filteredComplaints.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())
+    else if (sort === "upvotes") filteredComplaints.sort((a, b) => b._count.upvotes - a._count.upvotes)
 
     return (
         <main className="min-h-screen bg-background">
@@ -144,7 +135,7 @@ export default async function ComplaintsPage({ searchParams }: ComplaintsPagePro
                 {/* Count */}
                 <div className="flex items-center gap-2 mb-4">
                     <span className="text-sm text-muted-foreground">
-                        Showing <span className="font-medium text-foreground">{filterComplaints.length}</span> complaints
+                        Showing <span className="font-medium text-foreground">{filteredComplaints.length}</span> complaints
                     </span>
                     <Separator orientation="vertical" className="h-4" />
                     <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
@@ -154,9 +145,9 @@ export default async function ComplaintsPage({ searchParams }: ComplaintsPagePro
                 </div>
 
                 {/* Grid */}
-                {filterComplaints.length > 0 ? (
+                {filteredComplaints.length > 0 ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-                        {filterComplaints.map((complaint) => (
+                        {filteredComplaints.map((complaint) => (
                             <ComplaintCard key={complaint.id} complaint={complaint} />
                         ))}
                     </div>
