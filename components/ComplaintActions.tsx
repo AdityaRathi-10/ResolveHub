@@ -26,7 +26,7 @@ interface ComplaintActionsProps {
     authorId: string
     canEdit: boolean
     size?: "xs" | "sm"
-    icon: IconName
+    icon?: IconName
 }
 
 function DeleteModal({

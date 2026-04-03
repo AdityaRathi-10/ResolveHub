@@ -12,10 +12,14 @@ import {
     CalendarClock,
     TrendingUp,
     UserCheck,
-    EllipsisVertical,
 } from "lucide-react"
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipTrigger,
+} from "@/components/ui/tooltip"
 import { escalateComplaints } from "@/lib/escalateComplaint"
-import { formatDistanceToNowStrict } from "date-fns"
+import { formatDate, formatDistanceToNowStrict } from "date-fns"
 import ComplaintActions from "@/components/ComplaintActions"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/app/api/auth/[...nextauth]/options"
@@ -62,14 +66,14 @@ export async function ComplaintCard({ complaint }: { complaint: ComplaintCardDat
     const StatusIcon = status.icon
     const session = await getServerSession(authOptions)
 
-    if(!session?.user) throw new Error("Unauthorized")
+    if (!session?.user) throw new Error("Unauthorized")
 
     await escalateComplaints()
 
     const initials = complaint.user.name
         .split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
 
-    const isOwner = complaint.userId === session.user.id 
+    const isOwner = complaint.userId === session.user.id
     const canEdit = isOwner && complaint.status === "PENDING"
 
     return (
@@ -102,7 +106,14 @@ export async function ComplaintCard({ complaint }: { complaint: ComplaintCardDat
                                     {priority.label}
                                 </span>
                                 <span className="text-xs text-muted-foreground hidden sm:block">
-                                    {formatDistanceToNowStrict(new Date(complaint.createdAt), { addSuffix: true })}
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <span>{formatDistanceToNowStrict(new Date(complaint.createdAt), { addSuffix: true })}</span>
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                            <p>{formatDate(new Date(complaint.createdAt), "PPpp")}</p>
+                                        </TooltipContent>
+                                    </Tooltip>
                                 </span>
                             </div>
                         </div>

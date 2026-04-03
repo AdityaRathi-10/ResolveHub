@@ -5,6 +5,11 @@ import Link from "next/link"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipTrigger,
+} from "@/components/ui/tooltip"
 import { MediaGallery } from "@/components/MediaGallery"
 import {
     ArrowLeft,
@@ -24,7 +29,7 @@ import ComplaintActivityButton from "@/components/ComplaintActivityButton"
 import ComplaintAudit from "@/components/ComplaintAudit"
 import { ResolutionCard } from "@/components/ResolutionCard"
 import CommentsSection from "@/components/CommentsSection"
-import { formatDistanceToNowStrict } from "date-fns"
+import { formatDate, formatDistanceToNowStrict } from "date-fns"
 import ComplaintActions from "@/components/ComplaintActions"
 
 type Priority = "HIGH" | "MEDIUM" | "LOW"
@@ -248,7 +253,15 @@ export default async function ComplaintDetailPage({
                             {/* Timestamps */}
                             <div className="mt-4 pt-3 border-t border-border/40">
                                 <span className="text-xs text-muted-foreground">
-                                    Created {formatDistanceToNowStrict(new Date(complaint.createdAt), { addSuffix: true })}
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <span>Created {formatDistanceToNowStrict(new Date(complaint.createdAt), { addSuffix: true })}</span>
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                            <p>{formatDate(new Date(complaint.createdAt), "PPpp")}</p>
+                                        </TooltipContent>
+                                    </Tooltip>
+
                                 </span>
                             </div>
                         </div>

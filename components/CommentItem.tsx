@@ -1,6 +1,6 @@
 "use client"
 
-import { formatDistanceToNowStrict } from "date-fns"
+import { formatDate, formatDistanceToNowStrict } from "date-fns"
 import { Avatar, AvatarFallback } from "./ui/avatar"
 import { Button } from "./ui/button"
 import { Textarea } from "./ui/textarea"
@@ -11,6 +11,11 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "./ui/dropdown-menu"
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipTrigger,
+} from "./ui/tooltip"
 import { useState } from "react"
 import { useSession } from "next-auth/react"
 import { redirect } from "next/navigation"
@@ -33,8 +38,8 @@ function initials(name: string) {
     return name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
 }
 
-export default function CommentItem({ comment, onEdit, onDelete }: { 
-    comment: CommentDetails[number] 
+export default function CommentItem({ comment, onEdit, onDelete }: {
+    comment: CommentDetails[number]
     onEdit: (commentId: string, description: string) => Promise<void>
     onDelete: (commentId: string) => Promise<void>
 }) {
@@ -73,7 +78,7 @@ export default function CommentItem({ comment, onEdit, onDelete }: {
         setIsEditing(false)
     }
 
-    if(status === "loading") return null
+    if (status === "loading") return null
 
     if (!session?.user) redirect("/sign-in")
 
@@ -93,7 +98,14 @@ export default function CommentItem({ comment, onEdit, onDelete }: {
                             {user.name}
                         </span>
                         <span className="text-xs text-muted-foreground shrink-0">
-                            {formatDistanceToNowStrict(new Date(createdAt), { addSuffix: true })}
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <span>{formatDistanceToNowStrict(new Date(createdAt), { addSuffix: true })}</span>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <p>{formatDate(new Date(createdAt), "PPpp")}</p>
+                                </TooltipContent>
+                            </Tooltip>
                         </span>
                         {
                             isEdited && (

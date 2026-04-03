@@ -7,6 +7,11 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import {
+    Tooltip,
+    TooltipContent,
+    TooltipTrigger,
+} from "@/components/ui/tooltip"
+import {
     Clock,
     CheckCircle2,
     Loader2,
@@ -24,7 +29,7 @@ import {
     Star,
 } from "lucide-react"
 import { prisma } from "@/lib/prisma"
-import { formatDistanceToNowStrict } from "date-fns"
+import { formatDate, formatDistanceToNowStrict } from "date-fns"
 
 // Types
 
@@ -216,7 +221,14 @@ function ComplaintRow({
                                 {complaint.upvotesCount}
                             </span>
                             <span className="text-muted-foreground/50">
-                                {formatDistanceToNowStrict(new Date(complaint.createdAt), { addSuffix: true })}
+                                <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <span>{formatDistanceToNowStrict(new Date(complaint.createdAt), { addSuffix: true })}</span>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <p>{formatDate(new Date(complaint.createdAt), "PPpp")}</p>
+                                </TooltipContent>
+                            </Tooltip>
                             </span>
                             <ArrowRight className="h-3.5 w-3.5 opacity-0 group-hover:opacity-100 text-primary transition-opacity" />
                         </span>

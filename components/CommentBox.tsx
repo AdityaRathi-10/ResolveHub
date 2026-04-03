@@ -4,7 +4,7 @@ import { useState } from "react"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
-import { SendHorizonal, Loader2 } from "lucide-react"
+import { SendHorizonal } from "lucide-react"
 
 interface CommentBoxProps {
     complaintId: string
@@ -17,7 +17,6 @@ interface CommentBoxProps {
 
 export function CommentBox({ currentUser, onCreate }: CommentBoxProps) {
     const [text, setText] = useState("")
-    const [loading, setLoading] = useState(false)
 
     const initials = currentUser.name
         .split(" ")
@@ -30,9 +29,7 @@ export function CommentBox({ currentUser, onCreate }: CommentBoxProps) {
         const trimmed = text.trim()
         if (!trimmed) return
         setText("")
-        setLoading(true)
         await onCreate(text)
-        setLoading(false)
     }
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -66,14 +63,10 @@ export function CommentBox({ currentUser, onCreate }: CommentBoxProps) {
                         <Button
                             size="sm"
                             onClick={handleCreateComment}
-                            disabled={!text.trim() || loading}
+                            disabled={!text.trim()}
                             className="h-7 px-3 text-xs gap-1.5"
                         >
-                            {loading ? (
-                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                            ) : (
-                                <SendHorizonal className="h-3.5 w-3.5" />
-                            )}
+                            <SendHorizonal className="h-3.5 w-3.5" />
                             Comment
                         </Button>
                     </div>
