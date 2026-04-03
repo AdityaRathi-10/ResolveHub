@@ -21,7 +21,7 @@ export default async function createComplaintAction(data: z.infer<typeof complai
 
     try {
         const createdAt = new Date()
-        const deadline = calculateDeadline(priority ? priority : "LOW", createdAt)
+        const deadline = calculateDeadline(priority ?? "LOW", createdAt)
     
         await prisma.complaint.create({
             data: {
