@@ -33,7 +33,7 @@ export default function Navbar() {
         ? user.name.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2)
         : "U"
 
-    if(status === "loading") return null
+    const isLoading = status === "loading"
 
     return (
         <header className="sticky top-0 z-50 w-full border-b border-border bg-background/80 backdrop-blur-xl">
@@ -42,13 +42,10 @@ export default function Navbar() {
 
                     {/* Logo */}
                     <Link href="/" className="flex items-center gap-2 group shrink-0">
-                        <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform duration-200">
+                        <div className="h-8 w-8 rounded-lg bg-purple-900 flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform duration-200">
                             <Zap className="h-4 w-4 text-white" />
                         </div>
-                        <span
-                            className="font-semibold text-base tracking-tight text-foreground"
-                            
-                        >
+                        <span className="font-semibold text-base tracking-tight text-foreground">
                             ResolveIt
                         </span>
                     </Link>
@@ -65,8 +62,8 @@ export default function Navbar() {
                                         key={item.href}
                                         href={item.href}
                                         className={`relative px-3.5 py-1.5 rounded-lg text-sm font-medium transition-all duration-150 ${isActive
-                                                ? "text-primary bg-primary/10"
-                                                : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                                            ? "text-primary bg-primary/10"
+                                            : "text-muted-foreground hover:text-foreground hover:bg-muted"
                                             }`}
                                     >
                                         {item.label}
@@ -83,7 +80,9 @@ export default function Navbar() {
                     <div className="flex items-center gap-1.5 shrink-0">
                         <ThemeToggle />
 
-                        {user ? (
+                        {isLoading ? (
+                            <div className="h-9 w-20 bg-muted animate-pulse rounded-lg" />
+                        ) : user ? (
                             <div className="relative">
                                 <button
                                     onClick={() => setProfileOpen((v) => !v)}
@@ -92,7 +91,7 @@ export default function Navbar() {
                                     <div className="h-8 w-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center">
                                         <span
                                             className="text-xs font-bold text-primary"
-                                            
+
                                         >
                                             {initials}
                                         </span>
@@ -151,7 +150,7 @@ export default function Navbar() {
                         )}
 
                         {/* Mobile hamburger */}
-                        {user && (
+                        {!isLoading && user && (
                             <button
                                 className="md:hidden h-9 w-9 flex items-center justify-center rounded-lg hover:bg-muted transition-colors"
                                 onClick={() => setMobileOpen((v) => !v)}
@@ -176,8 +175,8 @@ export default function Navbar() {
                                     href={item.href}
                                     onClick={() => setMobileOpen(false)}
                                     className={`flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${isActive
-                                            ? "bg-primary/10 text-primary"
-                                            : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                                        ? "bg-primary/10 text-primary"
+                                        : "text-muted-foreground hover:text-foreground hover:bg-muted"
                                         }`}
                                 >
                                     {item.label}

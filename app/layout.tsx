@@ -6,6 +6,8 @@ import { ThemeProvider } from "@/context/ThemeProvider";
 import Navbar from "@/components/Navbar";
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { Toaster } from "sonner";
+import { getServerSession } from "next-auth";
+import { authOptions } from "./api/auth/[...nextauth]/options";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -18,15 +20,16 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "ResolveIt — Resolve Complaints Faster",
+  title: "ResolveIt",
   description: "A streamlined platform for submitting and resolving complaints.",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const session = await getServerSession(authOptions)
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
@@ -44,7 +47,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <AuthProvider>
+          <AuthProvider session={session}>
             <TooltipProvider>
               <Navbar />
               {children}
