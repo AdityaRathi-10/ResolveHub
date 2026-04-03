@@ -22,7 +22,7 @@ import {
     ThumbsDown,
 } from "lucide-react"
 import { formatDistanceToNowStrict } from "date-fns"
-import { approveResolution, disapproveResolution } from "@/app/complaints/[id]/action"
+import { approveResolution, disapproveResolution } from "@/app/complaints/[id]/actions/resolution.actions"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 

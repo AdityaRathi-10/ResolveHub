@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button"
 import { MoreHorizontal, Pencil, Trash2, Loader2, AlertCircle, Factory, LucideIcon, EllipsisVertical } from "lucide-react"
-import { deleteComplaint } from "@/app/complaints/[id]/action"
+import { deleteComplaint } from "@/app/complaints/[id]/actions/complaint.actions"
 import { createPortal } from "react-dom"
 
 const ICON_MAP = {
@@ -73,10 +73,7 @@ function DeleteModal({
                             <AlertCircle className="h-4.5 w-4.5 text-destructive" />
                         </div>
                         <div>
-                            <h2
-                                className="text-base font-semibold text-foreground"
-                                style={{ fontFamily: "'Sora', sans-serif" }}
-                            >
+                            <h2 className="text-base font-semibold text-foreground">
                                 Delete complaint?
                             </h2>
                             <p className="text-xs text-muted-foreground mt-0.5">

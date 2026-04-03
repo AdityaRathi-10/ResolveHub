@@ -153,10 +153,7 @@ export default function ComplaintForm(props: ComplaintFormProps) {
 
                 {/* Page header — changes between create and edit */}
                 <div className="mb-8">
-                    <h1
-                        className="text-2xl font-bold text-foreground"
-                        style={{ fontFamily: "'Sora', sans-serif" }}
-                    >
+                    <h1 className="text-2xl font-bold text-foreground">
                         {isEdit ? "Edit Complaint" : "New Complaint"}
                     </h1>
                     <p className="text-sm text-muted-foreground mt-1">

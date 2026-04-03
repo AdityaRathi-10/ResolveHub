@@ -8,7 +8,7 @@ import { CommentBox } from './CommentBox'
 import { useSession } from 'next-auth/react'
 import { redirect } from 'next/navigation'
 import { useState } from 'react'
-import { createComment, deleteComment, editComment } from '@/app/complaints/[id]/action'
+import { createComment, deleteComment, editComment } from '@/app/complaints/[id]/actions/comment.actions'
 
 type Comment = {
     id: string

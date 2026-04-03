@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react'
 import { Button } from './ui/button'
-import { assignComplaint, closeComplaint, startWorkingOnComplaint, unassignComplaint } from '@/app/complaints/[id]/action'
+import { assignComplaint, closeComplaint, startWorkingOnComplaint, unassignComplaint } from '@/app/complaints/[id]/actions/complaint.actions'
 import { useSession } from 'next-auth/react'
 import { Loader2 } from 'lucide-react'
 

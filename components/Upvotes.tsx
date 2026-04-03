@@ -1,6 +1,6 @@
 "use client"
 
-import { toggleUpvote } from "@/app/complaints/[id]/action";
+import { toggleUpvote } from "@/app/complaints/[id]/actions/complaint.actions";
 import { ChevronUp } from "lucide-react";
 import { useState } from "react";
 import { Button } from "./ui/button";

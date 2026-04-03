@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { ShieldCheck, ImagePlus, X, Loader2, AlertCircle } from "lucide-react"
 import { Label } from "./ui/label"
 import Image from "next/image"
-import { submitResolutionAction } from "@/app/complaints/[id]/action"
+import { submitResolutionAction } from "@/app/complaints/[id]/actions/resolution.actions"
 
 function ResolutionModal({
     onClose,
