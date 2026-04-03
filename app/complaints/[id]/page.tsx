@@ -25,6 +25,7 @@ import ComplaintAudit from "@/components/ComplaintAudit"
 import { ResolutionCard } from "@/components/ResolutionCard"
 import CommentsSection from "@/components/CommentsSection"
 import { formatDistanceToNowStrict } from "date-fns"
+import ComplaintActions from "@/components/ComplaintActions"
 
 type Priority = "HIGH" | "MEDIUM" | "LOW"
 type Status = "PENDING" | "IN_PROGRESS" | "RESOLVED" | "CLOSED"
@@ -98,13 +99,18 @@ export default async function ComplaintDetailPage({
     const StatusIcon = status.icon
     const isLikedByUser = Boolean(complaint.upvotes.find((upvote) => upvote.userId === session.user.id))
 
+    const isEdited = complaint.updatedAt > complaint.createdAt
+    const isOwner = session.user.id === complaint.userId
+    const canEdit = isOwner && complaint.status === "PENDING"
+
     return (
         <main className="min-h-screen bg-background">
             <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-8">
 
                 {/* Breadcrumb */}
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 mb-6">
+                <div className="flex items-center justify-between mb-6">
+                    {/* Breadcrumb */}
+                    <div className="flex items-center gap-2">
                         <Link
                             href="/complaints"
                             className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
@@ -117,13 +123,25 @@ export default async function ComplaintDetailPage({
                             {complaint.title}
                         </span>
                     </div>
-                    <ComplaintActivityButton
-                        assigned={!!complaint.assignedTo}
-                        complaintId={complaint.id}
-                        assignedTo={complaint.assignedToId}
-                        status={complaint.status}
-                        createdBy={complaint.userId}
-                    />
+
+                    {/* Right side: activity button + owner actions */}
+                    <div className="flex items-center gap-2 shrink-0">
+                        <ComplaintActivityButton
+                            assigned={!!complaint.assignedTo}
+                            complaintId={complaint.id}
+                            assignedTo={complaint.assignedToId}
+                            status={complaint.status}
+                            createdBy={complaint.userId}
+                        />
+                        {isOwner && (
+                            <ComplaintActions
+                                complaintId={complaint.id}
+                                authorId={complaint.userId}
+                                canEdit={canEdit}
+                                size="sm"
+                            />
+                        )}
+                    </div>
                 </div>
 
                 {/* Main content */}
@@ -149,6 +167,11 @@ export default async function ComplaintDetailPage({
                                     <span className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-lg bg-purple-200 text-purple-800 border border-purple-500/20">
                                         <TrendingUp className="h-3.5 w-3.5" />
                                         Escalated
+                                    </span>
+                                )}
+                                {isEdited && (
+                                    <span className="text-sm text-muted-foreground">
+                                        (Edited)
                                     </span>
                                 )}
                             </div>
