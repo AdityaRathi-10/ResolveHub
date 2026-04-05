@@ -56,10 +56,10 @@ export default function CommentItem({ comment, onEdit, onDelete }: {
     const handleEditComment = async () => {
         const trimmed = text.trim()
         if (!trimmed) return
+        setIsEditing(false)
         setLoading(true)
         await onEdit(comment.id, trimmed)
         setLoading(false)
-        setIsEditing(false)
     }
 
     const handleDeleteComment = async () => {

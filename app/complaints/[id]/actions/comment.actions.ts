@@ -1,4 +1,4 @@
-"use server"
+"use server";
 
 import { authOptions } from "@/app/api/auth/[...nextauth]/options";
 import { prisma } from "@/lib/prisma";
@@ -92,5 +92,31 @@ export async function deleteComment(commentId: string, commentedBy: string) {
     success: true,
     message: "Comment deleted successfully",
     data: deletedComment.id,
+  };
+}
+
+export async function getComments(complaintId: string) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user) {
+    throw new Error("Unauthorized");
+  }
+
+  const comments = await prisma.comment.findMany({
+    where: {
+      complaintId
+    },
+    include: {
+      user: {
+        select: { id: true, name: true, email: true }
+      }
+    },
+    orderBy: {
+      createdAt: "desc"
+    }
+  })
+
+  return {
+    success: true,
+    data: comments,
   };
 }

@@ -7,8 +7,9 @@ import { Separator } from './ui/separator'
 import { CommentBox } from './CommentBox'
 import { useSession } from 'next-auth/react'
 import { redirect } from 'next/navigation'
-import { useState } from 'react'
-import { createComment, deleteComment, editComment } from '@/app/complaints/[id]/actions/comment.actions'
+import { useEffect, useRef, useState } from 'react'
+import { createComment, deleteComment, editComment, getComments } from '@/app/complaints/[id]/actions/comment.actions'
+import { supabase } from '@/lib/supabase/client'
 
 type Comment = {
     id: string
@@ -28,13 +29,32 @@ interface CommentSectionProps {
     complaintId: string
 }
 
+
 export default function CommentsSection({ comments, complaintId }: CommentSectionProps) {
     const [currentComments, setCurrentComments] = useState<Comment[]>(comments)
     const { data: session, status } = useSession()
 
-    if(status === "loading") return null
+    if (status === "loading") return null
 
     if (!session?.user) redirect("/sign-in")
+
+    useEffect(() => {
+        const channel = supabase
+            .channel('comments-realtime')
+            .on(
+                'postgres_changes',
+                { event: '*', schema: 'public', table: 'Comment' },
+                async () => {
+                    const { data: comments } = await getComments(complaintId)
+                    setCurrentComments(comments)
+                }
+            )
+            .subscribe()
+
+        return () => {
+            supabase.removeChannel(channel)
+        }
+    }, [])
 
     const handleCreateComment = async (description: string) => {
         const tempId = crypto.randomUUID()
@@ -62,6 +82,7 @@ export default function CommentsSection({ comments, complaintId }: CommentSectio
                         id,
                         description,
                         complaintId,
+                        userId: newComment.user.id!,
                         user: newComment.user,
                         createdAt,
                         updatedAt
