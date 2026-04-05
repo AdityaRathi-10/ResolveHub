@@ -31,9 +31,10 @@ import { ResolutionCard } from "@/components/ResolutionCard"
 import CommentsSection from "@/components/CommentsSection"
 import { formatDate, formatDistanceToNowStrict } from "date-fns"
 import ComplaintActions from "@/components/ComplaintActions"
+import ComplaintStatus from "@/components/ComplaintStatus"
+import ComplaintAssignTo from "@/components/ComplaintAssignTo"
 
 type Priority = "HIGH" | "MEDIUM" | "LOW"
-type Status = "PENDING" | "IN_PROGRESS" | "RESOLVED" | "CLOSED"
 
 // Configs
 
@@ -53,13 +54,6 @@ const PRIORITY_CONFIG: Record<Priority, { label: string; dot: string; badge: str
         dot: "bg-emerald-500",
         badge: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20",
     },
-}
-
-const STATUS_CONFIG: Record<Status, { label: string; icon: React.ElementType; class: string; bg: string }> = {
-    PENDING: { label: "Pending", icon: Clock, class: "text-muted-foreground", bg: "bg-muted" },
-    IN_PROGRESS: { label: "In Progress", icon: Loader2, class: "text-blue-500", bg: "bg-blue-500/10" },
-    RESOLVED: { label: "Resolved", icon: CheckCircle2, class: "text-emerald-500", bg: "bg-emerald-500/10" },
-    CLOSED: { label: "Closed", icon: XCircle, class: "text-muted-foreground", bg: "bg-muted" },
 }
 
 // Helpers
@@ -100,8 +94,6 @@ export default async function ComplaintDetailPage({
     if (!complaint) notFound()
 
     const priority = PRIORITY_CONFIG[complaint.priority]
-    const status = STATUS_CONFIG[complaint.status]
-    const StatusIcon = status.icon
     const isLikedByUser = Boolean(complaint.upvotes.find((upvote) => upvote.userId === session.user.id))
 
     const isEdited = complaint.updatedAt > complaint.createdAt
@@ -160,10 +152,10 @@ export default async function ComplaintDetailPage({
                         <div className="pl-4">
                             {/* Badges row */}
                             <div className="flex flex-wrap items-center gap-2 mb-4">
-                                <span className={`inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-lg ${status.bg} ${status.class}`}>
-                                    <StatusIcon className="h-3.5 w-3.5" />
-                                    {status.label}
-                                </span>
+                                <ComplaintStatus
+                                    complaintId={complaint.id}
+                                    complaintStatus={complaint.status}
+                                />
                                 <span className={`inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-lg border ${priority.badge}`}>
                                     <span className={`h-1.5 w-1.5 rounded-full ${priority.dot}`} />
                                     {priority.label}
@@ -214,19 +206,10 @@ export default async function ComplaintDetailPage({
                                 </div>
 
                                 {/* Assigned to */}
-                                <div>
-                                    <p className="text-xs text-muted-foreground mb-1.5">Assigned to</p>
-                                    {complaint.assignedTo ? (
-                                        <div className="flex items-center gap-2">
-                                            <UserCheck className="h-4 w-4 text-emerald-500 shrink-0" />
-                                            <span className="text-sm font-medium text-foreground truncate">
-                                                {complaint.assignedTo.name}
-                                            </span>
-                                        </div>
-                                    ) : (
-                                        <span className="text-sm text-muted-foreground">Unassigned</span>
-                                    )}
-                                </div>
+                                <ComplaintAssignTo 
+                                    complaintId={complaint.id}
+                                    assignedToName={complaint?.assignedTo?.name}
+                                />
 
                                 {/* Deadline */}
                                 <div>
