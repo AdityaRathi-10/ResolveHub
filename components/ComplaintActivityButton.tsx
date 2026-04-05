@@ -1,150 +1,266 @@
 "use client"
 
-import React, { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Button } from './ui/button'
-import { assignComplaint, closeComplaint, startWorkingOnComplaint, unassignComplaint } from '@/app/complaints/[id]/actions/complaint.actions'
+import {
+    assignComplaint,
+    closeComplaint,
+    getComplaintAssignment,
+    startWorkingOnComplaint,
+    unassignComplaint,
+} from '@/app/complaints/[id]/actions/complaint.actions'
 import { useSession } from 'next-auth/react'
 import { Loader2 } from 'lucide-react'
+import { supabase } from '@/lib/supabase/client'
 
-interface AssignComplaintProps {
+// Types
+type ComplaintStatus = "PENDING" | "IN_PROGRESS" | "RESOLVED" | "CLOSED"
+
+interface ComplaintActivityButtonProps {
     assigned: boolean
     complaintId: string
     assignedTo: string | null
-    status: string,
+    status: ComplaintStatus
     createdBy: string
 }
 
-export default function ComplaintActivityButton({ assigned, complaintId, assignedTo, status, createdBy }: AssignComplaintProps) {
+// Component
+export default function ComplaintActivityButton({
+    assigned,
+    complaintId,
+    assignedTo,
+    status,
+    createdBy,
+}: ComplaintActivityButtonProps) {
     const [isAssigned, setIsAssigned] = useState(assigned)
-    const [currentAssignedTo, setCurrentAssignedTo] = useState(assignedTo)
-    const [isSubmitting, setIsSubmitting] = useState(false)
-    const [isClosed, setIsClosed] = useState(false)
+    const [currentAssignedTo, setCurrentAssignedTo] = useState<string | null>(assignedTo)
+    const [currentStatus, setCurrentStatus] = useState<ComplaintStatus>(status)
+
+    const [isAssigning, setIsAssigning] = useState(false)
+    const [isUnassigning, setIsUnassigning] = useState(false)
+    const [isStartingWork, setIsStartingWork] = useState(false)
+    const [isClosing, setIsClosing] = useState(false)
+
     const { data: session } = useSession()
 
-    const isCreatorOfComplaint = session?.user.role === "STUDENT" && session?.user.id === createdBy
-    const isAssignedCaretakerOfComplaint = session?.user.role === "CARETAKER" && session.user.id === currentAssignedTo
-    const allowUnassign = isAssignedCaretakerOfComplaint
-    const allowClosing = isCreatorOfComplaint || (isAssignedCaretakerOfComplaint && status === "RESOLVED")
+    const isMutating = useRef(false)
+    useEffect(() => {
+        isMutating.current = isAssigning || isUnassigning || isStartingWork || isClosing
+    }, [isAssigning, isUnassigning, isStartingWork, isClosing])
 
-    const handleAssignComplaint = async () => {
-        setIsSubmitting(true)
+    // Realtime subscription 
+    useEffect(() => {
+        const channel = supabase
+            .channel(`complaint-activity-${complaintId}`)
+            .on(
+                'postgres_changes',
+                {
+                    event: '*',
+                    schema: 'public',
+                    table: 'Complaint',
+                    filter: `id=eq.${complaintId}`,
+                },
+                async () => {
+                    if (isMutating.current) return
+
+                    const { data: assignment } = await getComplaintAssignment(complaintId)
+                    if (!assignment) return
+
+                    setCurrentStatus(assignment.status as ComplaintStatus)
+
+                    if (assignment.assignedTo) {
+                        setIsAssigned(true)
+                        setCurrentAssignedTo(assignment.assignedTo.id)
+                    } else {
+                        setIsAssigned(false)
+                        setCurrentAssignedTo(null)
+                    }
+                }
+            )
+            .subscribe()
+
+        return () => {
+            supabase.removeChannel(channel)
+        }
+    }, [complaintId])
+
+    // Permission derivations 
+    const viewerRole = session?.user.role
+    const viewerId = session?.user.id
+
+    const isComplaintOwner = viewerRole === "STUDENT" && viewerId === createdBy
+    const isAssignedCaretaker = viewerRole === "CARETAKER" && viewerId === currentAssignedTo
+
+    const canClose =
+        currentStatus === "RESOLVED" &&
+        (isComplaintOwner || isAssignedCaretaker)
+
+    const canUnassign =
+        isAssignedCaretaker &&
+        currentStatus !== "RESOLVED" &&
+        currentStatus !== "CLOSED"
+
+    const canStartWork = isAssignedCaretaker && currentStatus === "PENDING"
+
+    // Action handlers
+
+    const handleAssign = async () => {
+        setIsAssigning(true)
         try {
             const response = await assignComplaint(complaintId)
             if (response.success) {
                 setIsAssigned(true)
-                setCurrentAssignedTo(session?.user?.id ?? null)
+                setCurrentAssignedTo(viewerId ?? null)
             }
         } catch (error) {
-            console.log("Error: ", error)
+            console.error("Assign failed:", error)
         } finally {
-            setIsSubmitting(false)
+            setIsAssigning(false)
         }
     }
 
-    const handleUnAssignComplaint = async () => {
-        setIsSubmitting(true)
+    const handleUnassign = async () => {
+        setIsUnassigning(true)
         try {
             const response = await unassignComplaint(complaintId)
             if (response.success) {
                 setIsAssigned(false)
                 setCurrentAssignedTo(null)
+                setCurrentStatus("PENDING")
             }
         } catch (error) {
-            console.log("Error: ", error)
+            console.error("Unassign failed:", error)
         } finally {
-            setIsSubmitting(false)
+            setIsUnassigning(false)
         }
     }
 
-    const handleStartWorkOnComplaint = async () => {
+    const handleStartWork = async () => {
+        setIsStartingWork(true)
         try {
             const response = await startWorkingOnComplaint(complaintId)
-            console.log("re", response)
-        } catch (error) {
-            console.log("Error: ", error)
-        }
-    }
-
-    const handleCloseComplaint = async () => {
-        setIsSubmitting(true)
-        try {
-            const response = await closeComplaint(complaintId, session!.user.id)
             if (response.success) {
-                setIsClosed(true)
+                setCurrentStatus("IN_PROGRESS")
             }
         } catch (error) {
-            console.log("Error: ", error)
+            console.error("Start work failed:", error)
         } finally {
-            setIsSubmitting(false)
+            setIsStartingWork(false)
         }
     }
 
-    if(status === "loading") return null
-
-    if ((isCreatorOfComplaint && status !== "RESOLVED") || status === "CLOSED") {
-        return null
+    const handleClose = async () => {
+        if (!viewerId) return
+        setIsClosing(true)
+        try {
+            const response = await closeComplaint(complaintId, viewerId)
+            if (response.success) {
+                setCurrentStatus("CLOSED")
+            }
+        } catch (error) {
+            console.error("Close failed:", error)
+        } finally {
+            setIsClosing(false)
+        }
     }
 
-    if (!isAssigned) {
-        return (
-            <Button
-                disabled={isSubmitting}
-                onClick={handleAssignComplaint}
-            >
-                Assign to me
-            </Button>
-        )
-    }
+    if (!session?.user) return null
+    if (currentStatus === "CLOSED") return null
 
-    if (allowClosing) {
+    if (isComplaintOwner) {
+        if (!canClose) return null
         return (
             <Button
-                className="flex gap-2 bg-blue-600 hover:bg-blue-800 text-white shadow-sm cursor-pointer"
-                disabled={isSubmitting || isClosed}
-                onClick={handleCloseComplaint}
+                onClick={handleClose}
+                disabled={isClosing}
+                className="gap-2 bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
             >
-                {(isSubmitting || isClosed) ? (
+                {isClosing ? (
                     <>
                         <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                        Closing complaint...
+                        Closing…
                     </>
                 ) : (
                     "Close complaint"
                 )}
-            </ Button>
-
+            </Button>
         )
     }
 
-    if (allowUnassign) {
+    if (!isAssigned) {
         return (
-            <div className="flex gap-2">
-                {
-                    currentAssignedTo && status === "PENDING" && (
-                        <Button
-                            onClick={handleStartWorkOnComplaint}
-                        >
-                            Start work
-                        </Button>
-                    )
-                }
-                {
-                    (status !== "RESOLVED" && status !== "CLOSED") && (
-                        <Button
-                            disabled={isSubmitting}
-                            onClick={handleUnAssignComplaint}
-                        >
-                            Unassign
-                        </Button>
-                    )
-                }
-            </div>
+            <Button onClick={handleAssign} disabled={isAssigning} className="gap-2">
+                {isAssigning ? (
+                    <>
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        Assigning…
+                    </>
+                ) : (
+                    "Assign to me"
+                )}
+            </Button>
+        )
+    }
+
+    if (!isAssignedCaretaker) {
+        return (
+            <Button disabled>
+                Assigned
+            </Button>
         )
     }
 
     return (
-        <Button disabled>
-            Assigned
-        </Button>
+        <div className="flex items-center gap-2">
+            {/* Close — only when RESOLVED */}
+            {canClose && (
+                <Button
+                    onClick={handleClose}
+                    disabled={isClosing}
+                    className="gap-2 bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
+                >
+                    {isClosing ? (
+                        <>
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            Closing…
+                        </>
+                    ) : (
+                        "Close complaint"
+                    )}
+                </Button>
+            )}
+
+            {/* Start work — only while still PENDING */}
+            {canStartWork && (
+                <Button onClick={handleStartWork} disabled={isStartingWork} className="gap-2">
+                    {isStartingWork ? (
+                        <>
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            Starting…
+                        </>
+                    ) : (
+                        "Start work"
+                    )}
+                </Button>
+            )}
+
+            {/* Unassign — while not yet resolved/closed */}
+            {canUnassign && (
+                <Button
+                    onClick={handleUnassign}
+                    disabled={isUnassigning}
+                    className="gap-2"
+                >
+                    {isUnassigning ? (
+                        <>
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            Unassigning…
+                        </>
+                    ) : (
+                        "Unassign"
+                    )}
+                </Button>
+            )}
+        </div>
     )
 }
