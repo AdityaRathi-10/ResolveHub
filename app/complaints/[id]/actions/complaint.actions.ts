@@ -118,6 +118,7 @@ export async function unassignComplaint(complaintId: string) {
     },
     data: {
       assignedToId: null,
+      status: "PENDING"
     },
   });
 
@@ -186,7 +187,6 @@ export async function startWorkingOnComplaint(complaintId: string) {
   };
 }
 
-
 export async function deleteComplaint(complaintId: string, authorId: string) {
   const session = await getServerSession(authOptions);
   if (!session?.user || session.user.id !== authorId) {
@@ -223,7 +223,6 @@ export async function deleteComplaint(complaintId: string, authorId: string) {
     message: "Complaint deleted successfully",
   };
 }
-
 
 export async function closeComplaint(
   complaintId: string,
@@ -263,3 +262,46 @@ export async function closeComplaint(
   };
 }
 
+export async function getComplaintAssignment(complaintId: string) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user) throw new Error("Unauthorized");
+
+  const assignment = await prisma.complaint.findUnique({
+    where: {
+      id: complaintId
+    },
+    select: { 
+      assignedTo: {
+        select: { id: true }
+      },
+      status: true
+    }
+  })
+
+  return {
+    success: true,
+    data: assignment
+  }
+}
+
+export async function getComplaintStatus(complaintId: string) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user) throw new Error("Unauthorized");
+
+  const status = await prisma.complaint.findUnique({
+    where: {
+      id: complaintId
+    },
+    select: { 
+      assignedTo: {
+        select: { name: true }
+      },
+      status: true
+    }
+  })
+
+  return {
+    success: true,
+    data: status
+  }
+}
