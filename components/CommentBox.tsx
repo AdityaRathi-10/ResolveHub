@@ -29,7 +29,7 @@ export function CommentBox({ currentUser, onCreate }: CommentBoxProps) {
         const trimmed = text.trim()
         if (!trimmed) return
         setText("")
-        await onCreate(text)
+        await onCreate(trimmed)
     }
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {

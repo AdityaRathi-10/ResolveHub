@@ -29,8 +29,12 @@ export default function ComplaintStatus({ complaintId, complaintStatus }: Compla
         const channel = supabase
             .channel('complaint-status-realtime')
             .on(
-                'postgres_changes',
-                { event: '*', schema: 'public', table: 'Complaint' },
+                'postgres_changes', {
+                    event: '*',
+                    schema: 'public',
+                    table: 'Complaint',
+                    filter: `id=eq.${complaintId}`,
+                },
                 async () => {
                     const { data } = await getComplaintStatus(complaintId)
                     if (data?.status) {

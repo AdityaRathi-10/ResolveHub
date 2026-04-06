@@ -42,8 +42,11 @@ export default function CommentsSection({ comments, complaintId }: CommentSectio
         const channel = supabase
             .channel('comments-realtime')
             .on(
-                'postgres_changes',
-                { event: '*', schema: 'public', table: 'Comment' },
+                'postgres_changes', { 
+                    event: '*',
+                    schema: 'public',
+                    table: 'Comment',
+                },
                 async () => {
                     const { data: comments } = await getComments(complaintId)
                     setCurrentComments(comments)
@@ -54,7 +57,7 @@ export default function CommentsSection({ comments, complaintId }: CommentSectio
         return () => {
             supabase.removeChannel(channel)
         }
-    }, [])
+    })
 
     const handleCreateComment = async (description: string) => {
         const tempId = crypto.randomUUID()
@@ -144,7 +147,6 @@ export default function CommentsSection({ comments, complaintId }: CommentSectio
             setCurrentComments(prev)
         }
     }
-
 
     return (
         <div className="bg-card border border-border rounded-2xl p-5">
