@@ -33,6 +33,7 @@ import { formatDate, formatDistanceToNowStrict } from "date-fns"
 import ComplaintActions from "@/components/ComplaintActions"
 import ComplaintStatus from "@/components/ComplaintStatus"
 import ComplaintAssignTo from "@/components/ComplaintAssignTo"
+import Resolutions from "@/components/Resolutions"
 
 type Priority = "HIGH" | "MEDIUM" | "LOW"
 
@@ -279,7 +280,7 @@ export default async function ComplaintDetailPage({
                                 </Badge>
                             </div>
                             <div className="space-y-3">
-                                {complaint.resolutions.map((res, index) => (
+                                {/* {complaint.resolutions.map((res, index) => (
                                     <>
                                         <ResolutionCard
                                             key={res.id}
@@ -296,7 +297,13 @@ export default async function ComplaintDetailPage({
                                             caretakerId={complaint.assignedToId}
                                         />
                                     </>
-                                ))}
+                                ))} */}
+                                <Resolutions 
+                                    initialResolutions={complaint.resolutions}
+                                    complaintId={complaint.id}
+                                    authorId={complaint.userId}
+                                    caretakerId={complaint.assignedToId}
+                                />
                             </div>
                         </div>
                     )}

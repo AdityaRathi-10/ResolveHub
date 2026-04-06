@@ -405,7 +405,7 @@ export function ResolutionCard({
                                 </span>
                             </div>
 
-                            {canReview && resolution.status === "PENDING" && (
+                            {canReview && isLatest && resolution.status === "PENDING" && (
                                 <div className="flex items-center gap-2">
                                     <Button
                                         size="sm"
