@@ -305,3 +305,27 @@ export async function getComplaintStatus(complaintId: string) {
     data: status
   }
 }
+
+export async function getComplaintResolutions(complaintId: string) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user) throw new Error("Unauthorized");
+
+  const resolutions = await prisma.resolution.findMany({
+    where: {
+      complaintId
+    },
+    include: {
+      caretaker: {
+        select: { name: true, email: true }
+      }
+    },
+    orderBy: {
+      createdAt: "desc"
+    }
+  })
+
+  return {
+    success: true,
+    data: resolutions
+  }
+}
