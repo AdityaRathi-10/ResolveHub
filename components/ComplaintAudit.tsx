@@ -1,6 +1,5 @@
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/app/api/auth/[...nextauth]/options"
-import { prisma } from "@/lib/prisma"
+"use client"
+
 import {
     UserPlus,
     UserMinus,
@@ -12,8 +11,14 @@ import {
 } from "lucide-react"
 import { format, formatDistanceToNowStrict } from "date-fns"
 import MarkAsResolved from "./MarkAsResolved"
+import { useSession } from "next-auth/react"
+import { supabase } from "@/lib/supabase/client"
+import { useEffect, useState } from "react"
+import { getComplaintAudit } from "@/app/complaints/[id]/actions/complaint.actions"
 
 // Types
+
+type Status = "PENDING" | "IN_PROGRESS" | "RESOLVED" | "CLOSED"
 
 type AuditType =
     | "ASSIGNED"
@@ -31,6 +36,10 @@ type AuditEntry = {
     actor: {
         name: string
         email: string
+    },
+    complaint: {
+        status: Status
+        assignedToId: string | null
     }
 }
 
@@ -85,7 +94,7 @@ const AUDIT_CONFIG: Record<
 
 // Single event row
 
-async function AuditRow({
+function AuditRow({
     entry,
     isLast,
 }: {
@@ -140,39 +149,40 @@ async function AuditRow({
 
 // Component
 
-export default async function ComplaintAudit({ complaintId, caretakerId }: {
+export default function ComplaintAudit({ audit, lastResolution, complaintId, caretakerId, complaintStatus }: {
+    audit: AuditEntry[],
+    lastResolution: any,
     complaintId: string,
-    caretakerId: string | null
+    caretakerId: string | null,
+    complaintStatus: Status
 }) {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) throw new Error("Unauthorized")
+    const [initialAudit, setInitialAudit] = useState<AuditEntry[]>(audit)
+    const { data: session } = useSession()
 
-    const activity = await prisma.complaintAudit.findMany({
-        where: { complaintId },
-        include: {
-            actor: {
-                select: { name: true, email: true },
+    useEffect(() => {
+        const channel = supabase
+            .channel('complaint-audit-realtime')
+            .on(
+                'postgres_changes', {
+                event: 'INSERT',
+                schema: 'public',
+                table: 'ComplaintAudit',
             },
-            complaint: {
-                select: { status: true, assignedToId: true }
-            }
-        },
-        orderBy: { createdAt: "desc" },
-    })
+                async () => {
+                    const { data: complaintAudit } = await getComplaintAudit(complaintId)
+                    setInitialAudit(complaintAudit)
+                }
+            )
+            .subscribe()
 
-    const latestResolution = await prisma.resolution.findFirst({
-        where: {
-            complaintId
-        },
-        orderBy: {
-            createdAt: "desc"
-        },
-        select: {
-            status: true
+        return () => {
+            supabase.removeChannel(channel)
         }
     })
 
-    if (activity.length === 0) {
+    if (!session?.user) return null
+
+    if (initialAudit.length === 0) {
         return (
             <h2
                 className="text-sm font-semibold text-foreground"
@@ -192,15 +202,15 @@ export default async function ComplaintAudit({ complaintId, caretakerId }: {
                 >
                     Activity
                 </h2>
-                {activity.length > 0 && (
+                {initialAudit.length > 0 && (
                     <span className="ml-auto text-xs text-muted-foreground">
-                        {activity.length} event{activity.length !== 1 ? "s" : ""}
+                        {initialAudit.length} event{initialAudit.length !== 1 ? "s" : ""}
                     </span>
                 )}
             </div>
 
             {/* Timeline */}
-            {activity.length === 0 ? (
+            {initialAudit.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-8 text-center">
                     <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center mb-3">
                         <GitCommitHorizontal className="h-4 w-4 text-muted-foreground/50" />
@@ -209,11 +219,11 @@ export default async function ComplaintAudit({ complaintId, caretakerId }: {
                 </div>
             ) : (
                 <div className="pl-1">
-                    {activity.map((entry, i) => (
+                    {initialAudit.map((entry, i) => (
                         <AuditRow
                             key={entry.id}
                             entry={entry as AuditEntry}
-                            isLast={i === activity.length - 1}
+                            isLast={i === initialAudit.length - 1}
                         />
                     ))}
                 </div>
@@ -221,10 +231,9 @@ export default async function ComplaintAudit({ complaintId, caretakerId }: {
 
             <MarkAsResolved
                 complaintId={complaintId}
-                caretakerId={caretakerId}
-                resolutionStatus={latestResolution?.status as string}
-                complaintStatus={activity[0].complaint.status}
-                assignedToId={activity[0].complaint.assignedToId}
+                resolutionStatus={lastResolution?.status as string}
+                complaintStatus={complaintStatus}
+                assignedToId={caretakerId}
                 currentUserId={session.user.id}
             />
         </div>
