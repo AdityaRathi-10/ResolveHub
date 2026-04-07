@@ -237,7 +237,6 @@ function ResolutionModal({
 
 interface MarkAsResolvedProps {
     complaintId: string
-    caretakerId: string | null
     resolutionStatus: string | null
     complaintStatus: string
     assignedToId: string | null
@@ -246,7 +245,6 @@ interface MarkAsResolvedProps {
 
 export default function MarkAsResolved({
     complaintId,
-    caretakerId,
     resolutionStatus,
     complaintStatus,
     assignedToId,
@@ -276,7 +274,7 @@ export default function MarkAsResolved({
                 <ResolutionModal
                     onClose={() => setOpen(false)}
                     complaintId={complaintId}
-                    caretakerId={caretakerId}
+                    caretakerId={assignedToId}
                 />
             )}
         </>

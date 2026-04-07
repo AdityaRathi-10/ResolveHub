@@ -23,6 +23,31 @@ export async function submitResolutionAction(
     throw new Error("You are not allow to perform this action");
   }
 
+  const resolutionsCount = await prisma.resolution.count({
+    where: {
+      complaintId
+    }
+  })
+
+  if(resolutionsCount > 0) {
+    const lastResolution = await prisma.resolution.findFirst({
+      where: {
+        complaintId
+      },
+    });
+
+    if(lastResolution?.status === "PENDING") {
+      await prisma.resolution.update({
+        where: {
+          id: lastResolution.id
+        },
+        data: {
+          status: "DISCARDED"
+        }
+      })
+    }
+  }
+  
   const resolutionCreated = await prisma.resolution.create({
     data: {
       caretakerId,
@@ -42,8 +67,6 @@ export async function submitResolutionAction(
       },
     });
   }
-
-  revalidatePath(`/complaints/${complaintId}`);
 
   return {
     success: true,
