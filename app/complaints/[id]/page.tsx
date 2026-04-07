@@ -13,12 +13,7 @@ import {
 import { MediaGallery } from "@/components/MediaGallery"
 import {
     ArrowLeft,
-    Clock,
-    CheckCircle2,
-    Loader2,
-    XCircle,
     CalendarClock,
-    UserCheck,
     ShieldCheck,
     Image as ImageIcon,
     TrendingUp,
@@ -27,7 +22,6 @@ import { prisma } from "@/lib/prisma"
 import UpVotes from "@/components/Upvotes"
 import ComplaintActivityButton from "@/components/ComplaintActivityButton"
 import ComplaintAudit from "@/components/ComplaintAudit"
-import { ResolutionCard } from "@/components/ResolutionCard"
 import CommentsSection from "@/components/CommentsSection"
 import { formatDate, formatDistanceToNowStrict } from "date-fns"
 import ComplaintActions from "@/components/ComplaintActions"
@@ -94,6 +88,34 @@ export default async function ComplaintDetailPage({
     })
     if (!complaint) notFound()
 
+    const audit = await prisma.complaintAudit.findMany({
+        where: {
+            complaintId: complaint.id
+        },
+        include: {
+            actor: {
+                select: { name: true, email: true },
+            },
+            complaint: {
+                select: { status: true, assignedToId: true }
+            }
+        },
+        orderBy: { createdAt: "desc" },
+    })
+
+    const lastResolution = await prisma.resolution.findFirst({
+        where: {
+            complaintId: complaint.id
+        },
+        orderBy: {
+            createdAt: "desc"
+        },
+        select: {
+            status: true
+        }
+    })
+
+
     const priority = PRIORITY_CONFIG[complaint.priority]
     const isLikedByUser = Boolean(complaint.upvotes.find((upvote) => upvote.userId === session.user.id))
 
@@ -157,16 +179,16 @@ export default async function ComplaintDetailPage({
                                     complaintId={complaint.id}
                                     complaintStatus={complaint.status}
                                 />
-                                <span className={`inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-lg border ${priority.badge}`}>
-                                    <span className={`h-1.5 w-1.5 rounded-full ${priority.dot}`} />
-                                    {priority.label}
-                                </span>
                                 {complaint.isEscalated && (
                                     <span className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-lg bg-purple-200 text-purple-800 border border-purple-500/20">
                                         <TrendingUp className="h-3.5 w-3.5" />
                                         Escalated
                                     </span>
                                 )}
+                                <span className={`inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-lg border ${priority.badge}`}>
+                                    <span className={`h-1.5 w-1.5 rounded-full ${priority.dot}`} />
+                                    {priority.label}
+                                </span>
                                 {isEdited && (
                                     <span className="text-sm text-muted-foreground">
                                         (Edited)
@@ -207,7 +229,7 @@ export default async function ComplaintDetailPage({
                                 </div>
 
                                 {/* Assigned to */}
-                                <ComplaintAssignTo 
+                                <ComplaintAssignTo
                                     complaintId={complaint.id}
                                     assignedToName={complaint?.assignedTo?.name}
                                 />
@@ -268,51 +290,21 @@ export default async function ComplaintDetailPage({
                     )}
 
                     {/* Resolutions */}
-                    {complaint.resolutions.length > 0 && (
-                        <div className="bg-card border border-border rounded-2xl p-5">
-                            <div className="flex items-center gap-2 mb-4">
-                                <ShieldCheck className="h-4 w-4 text-primary" />
-                                <h2 className="text-sm font-semibold text-foreground" >
-                                    Resolutions
-                                </h2>
-                                <Badge variant="secondary" className="ml-auto text-xs">
-                                    {complaint.resolutions.length}
-                                </Badge>
-                            </div>
-                            <div className="space-y-3">
-                                {/* {complaint.resolutions.map((res, index) => (
-                                    <>
-                                        <ResolutionCard
-                                            key={res.id}
-                                            resolution={res}
-                                            attemptIndex={index + 1}
-                                            total={complaint.resolutions.length}
-                                            canReview={
-                                                session.user.role === "STUDENT" &&
-                                                session.user.id === complaint.user.id &&
-                                                res.status === "PENDING"
-                                            }
-                                            complaintId={complaint.id}
-                                            studentId={complaint.userId}
-                                            caretakerId={complaint.assignedToId}
-                                        />
-                                    </>
-                                ))} */}
-                                <Resolutions 
-                                    initialResolutions={complaint.resolutions}
-                                    complaintId={complaint.id}
-                                    authorId={complaint.userId}
-                                    caretakerId={complaint.assignedToId}
-                                />
-                            </div>
-                        </div>
-                    )}
+                    <Resolutions
+                        initialResolutions={complaint.resolutions}
+                        complaintId={complaint.id}
+                        authorId={complaint.userId}
+                        caretakerId={complaint.assignedToId}
+                    />
 
                     <Separator className="mb-5" />
 
                     <ComplaintAudit
                         complaintId={complaint.id}
                         caretakerId={complaint.assignedToId}
+                        audit={audit}
+                        lastResolution={lastResolution}
+                        complaintStatus={complaint.status}
                     />
 
                     <Separator className="mb-5" />

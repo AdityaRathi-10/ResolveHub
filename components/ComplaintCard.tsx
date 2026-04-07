@@ -88,16 +88,13 @@ export async function ComplaintCard({ complaint }: { complaint: ComplaintCardDat
                         {/* Top row */}
                         <div className="flex items-center justify-between gap-2 mb-3">
                             <div className="flex items-center gap-2 flex-wrap">
-                                {complaint.isEscalated && (
-                                    <div className="inline-flex items-center gap-1.5 text-xs font-medium px-2 py-1 rounded-lg bg-purple-200 text-purple-800">
-                                        <TrendingUp className="h-3 w-3" />
-                                        Escalated
-                                    </div>
-                                )}
                                 <div className={`inline-flex items-center gap-1.5 text-xs font-medium px-2 py-1 rounded-lg ${status.bg} ${status.class}`}>
                                     <StatusIcon className="h-3 w-3" />
                                     {status.label}
                                 </div>
+                                {complaint.isEscalated && (
+                                    <TrendingUp className="text-purple-400" />
+                                )}
                             </div>
 
                             <div className="flex items-center gap-2 mr-2">

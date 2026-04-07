@@ -2,7 +2,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/app/api/auth/[...nextauth]/options"
 import { redirect } from "next/navigation"
 import { ComplaintCard } from "@/components/ComplaintCard"
-import { Plus, SlidersHorizontal, Clock, CheckCircle2, Loader2, TrendingUp } from "lucide-react"
+import { Plus, SlidersHorizontal, Clock, CheckCircle2, Loader2, Layers2 } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
@@ -139,7 +139,7 @@ export default async function ComplaintsPage({ searchParams }: ComplaintsPagePro
                     </span>
                     <Separator orientation="vertical" className="h-4" />
                     <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                        <TrendingUp className="h-3.5 w-3.5" />
+                        <Layers2 className="h-3.5 w-3.5" />
                         {stats.inProgress} being worked on
                     </div>
                 </div>
