@@ -329,3 +329,30 @@ export async function getComplaintResolutions(complaintId: string) {
     data: resolutions
   }
 }
+
+export async function getComplaintAudit(complaintId: string) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user) throw new Error("Unauthorized");
+
+  const complaintAudit = await prisma.complaintAudit.findMany({
+    where: {
+      complaintId
+    },
+    include: {
+      complaint: {
+        select: { status: true, assignedToId: true }
+      },
+      actor: {
+        select: { name: true, email: true }
+      }
+    },
+    orderBy: {
+      createdAt: "desc"
+    }
+  })
+
+  return {
+    success: true,
+    data: complaintAudit
+  }
+}
