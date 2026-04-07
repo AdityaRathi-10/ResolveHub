@@ -20,13 +20,14 @@ import {
     AlertCircle,
     ThumbsUp,
     ThumbsDown,
+    Trash2,
 } from "lucide-react"
 import { formatDistanceToNowStrict } from "date-fns"
 import { approveResolution, disapproveResolution } from "@/app/complaints/[id]/actions/resolution.actions"
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// Types
 
-type ResolutionStatus = "PENDING" | "APPROVED" | "REJECTED"
+type ResolutionStatus = "PENDING" | "APPROVED" | "REJECTED" | "DISCARDED"
 
 export interface ResolutionCardProps {
     resolution: {
@@ -47,7 +48,7 @@ export interface ResolutionCardProps {
     caretakerId: string | null
 }
 
-// ─── Status config ────────────────────────────────────────────────────────────
+// Status config
 
 const STATUS_CONFIG: Record<
     ResolutionStatus,
@@ -84,9 +85,17 @@ const STATUS_CONFIG: Record<
         borderAccent: "border-red-500/30",
         dot: "bg-red-500",
     },
+    DISCARDED: {
+        label: "Discarded",
+        icon: Trash2,
+        iconClass: "text-gray-500",
+        badgeClass: "bg-gray-500/10 text-gray-600 dark:text-gray-400 border-gray-500/20",
+        borderAccent: "border-gray-500/30",
+        dot: "bg-gray-500",
+    },
 }
 
-// ─── Disapprove modal ─────────────────────────────────────────────────────────
+// Disapprove modal
 
 function DisapproveModal({
     complaintId,
@@ -243,7 +252,7 @@ function DisapproveModal({
     )
 }
 
-// ─── ResolutionCard ───────────────────────────────────────────────────────────
+// ResolutionCard
 
 export function ResolutionCard({
     resolution,
@@ -309,6 +318,7 @@ export function ResolutionCard({
     return (
         <>
             <Accordion
+                key={resolution.status}
                 type="single"
                 collapsible
                 defaultValue={isLatest ? "resolution" : undefined}
@@ -317,7 +327,7 @@ export function ResolutionCard({
                     value="resolution"
                     className={`rounded-xl border overflow-hidden transition-shadow data-[state=open]:shadow-sm ${config.borderAccent}`}
                 >
-                    {/* ── Trigger ─────────────────────────────────────────── */}
+                    {/* Trigger */}
                     <AccordionTrigger className="px-4 py-3 hover:no-underline hover:bg-muted/30 transition-colors data-[state=open]:border-b data-[state=open]:border-border/60 [&>svg]:shrink-0">
                         <div className="flex items-center justify-between w-full mr-3 gap-3 min-w-0">
                             <div className="flex items-center gap-2.5 min-w-0">
@@ -353,7 +363,7 @@ export function ResolutionCard({
                         </div>
                     </AccordionTrigger>
 
-                    {/* ── Content ──────────────────────────────────────────── */}
+                    {/* Content */}
                     <AccordionContent className="p-0 bg-card">
                         <div className="px-4 py-4 space-y-4">
                             {resolution.description ? (
