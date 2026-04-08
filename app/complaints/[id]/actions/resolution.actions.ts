@@ -1,4 +1,4 @@
-"use server"
+"use server";
 
 import { authOptions } from "@/app/api/auth/[...nextauth]/options";
 import { calculateCaretakerPoints } from "@/lib/calculateCaretakerPoints";
@@ -25,31 +25,35 @@ export async function submitResolutionAction(
 
   const resolutionsCount = await prisma.resolution.count({
     where: {
-      complaintId
-    }
-  })
+      complaintId,
+    },
+  });
 
-  if(resolutionsCount > 0) {
+  if (resolutionsCount > 0) {
     const lastResolution = await prisma.resolution.findFirst({
       where: {
-        complaintId
+        complaintId,
+        status: {
+          not: "DISCARDED"
+        }
       },
     });
 
-    if(lastResolution?.status === "PENDING") {
+    if (lastResolution?.status === "PENDING") {
       await prisma.resolution.update({
         where: {
-          id: lastResolution.id
+          id: lastResolution.id,
         },
         data: {
-          status: "DISCARDED"
-        }
-      })
+          status: "DISCARDED",
+        },
+      });
     }
   }
-  
+
   const resolutionCreated = await prisma.resolution.create({
     data: {
+      number: resolutionsCount + 1,
       caretakerId,
       complaintId,
       description,
@@ -62,6 +66,7 @@ export async function submitResolutionAction(
       data: {
         complaintId,
         actorId: caretakerId,
+        resolutionNumber: resolutionsCount + 1,
         type: "RESOLUTION_SUBMITTED",
         message: "Resolution shared",
       },
@@ -86,6 +91,12 @@ export async function approveResolution(
   if (session.user.role !== "STUDENT") {
     throw new Error("Only student can approve resolutions");
   }
+
+  const resolutionsCount = await prisma.resolution.count({
+    where: {
+      complaintId,
+    },
+  });
 
   const updatedResolution = await prisma.resolution.update({
     where: {
@@ -144,7 +155,8 @@ export async function approveResolution(
     data: {
       actorId: studentId,
       complaintId,
-      type: "STATUS_CHANGED",
+      resolutionNumber: resolutionsCount,
+      type: "RESOLUTION_APPROVED",
       message: "Resolution approved",
     },
   });
@@ -170,6 +182,12 @@ export async function disapproveResolution(
     throw new Error("Only student can disapprove resolutions");
   }
 
+  const resolutionsCount = await prisma.resolution.count({
+    where: {
+      complaintId,
+    },
+  });
+
   const updatedResolution = await prisma.resolution.update({
     where: {
       id: resolutionId,
@@ -192,7 +210,8 @@ export async function disapproveResolution(
     data: {
       actorId: studentId,
       complaintId,
-      type: "STATUS_CHANGED",
+      resolutionNumber: resolutionsCount,
+      type: "RESOLUTION_REJECTED",
       message: "Resolution rejected",
     },
   });

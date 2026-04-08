@@ -3,7 +3,6 @@
 import { authOptions } from "@/app/api/auth/[...nextauth]/options";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
-import { revalidatePath } from "next/cache";
 
 export async function createComment(complaintId: string, text: string) {
   const session = await getServerSession(authOptions);
