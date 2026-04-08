@@ -26,13 +26,18 @@ type AuditType =
     | "STATUS_CHANGED"
     | "ESCALATED"
     | "RESOLUTION_SUBMITTED"
+    | "RESOLUTION_APPROVED"
+    | "RESOLUTION_REJECTED"
     | "REOPENED"
+
+type ResolutionStatus = "PENDING" | "APPROVED" | "REJECTED" | "DISCARDED"
 
 type AuditEntry = {
     id: string
     type: AuditType
     message: string
     createdAt: Date
+    resolutionNumber: number | null
     actor: {
         name: string
         email: string
@@ -84,6 +89,18 @@ const AUDIT_CONFIG: Record<
         iconColor: "text-emerald-500",
         label: "Resolution submitted",
     },
+    RESOLUTION_APPROVED: {
+        icon: ShieldCheck,
+        iconBg: "bg-emerald-500/10 border-emerald-500/20",
+        iconColor: "text-emerald-500",
+        label: "Resolution approved",
+    },
+    RESOLUTION_REJECTED: {
+        icon: ShieldCheck,
+        iconBg: "bg-emerald-500/10 border-emerald-500/20",
+        iconColor: "text-emerald-500",
+        label: "Resolution rejected",
+    },
     REOPENED: {
         icon: RotateCcw,
         iconBg: "bg-amber-500/10 border-amber-500/20",
@@ -92,14 +109,34 @@ const AUDIT_CONFIG: Record<
     },
 }
 
+function scrollToResolution(resolutionNumber: number) {
+    const el = document.getElementById(`resolution-${resolutionNumber}`);
+    if (!el) return;
+
+    // Expand accordion if needed
+    const accordionTrigger = el.querySelector("[data-state='closed'] > .accordion-trigger");
+    if (accordionTrigger) {
+        (accordionTrigger as HTMLElement).click(); // Open the accordion
+    }
+
+    // Smooth scroll
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+
+    // Temporary highlight
+    el.classList.add("highlight");
+    setTimeout(() => el.classList.remove("highlight"), 2000);
+}
+
 // Single event row
 
 function AuditRow({
     entry,
     isLast,
+    resolutionNumber
 }: {
     entry: AuditEntry
     isLast: boolean
+    resolutionNumber: number | null
 }) {
     const config = AUDIT_CONFIG[entry.type]
     const Icon = config.icon
@@ -128,6 +165,22 @@ function AuditRow({
                     <span className="text-sm text-muted-foreground">
                         {entry.message}
                     </span>
+
+                    {/* Resolution navigating link  */}
+                    {
+                        entry.type.startsWith("RESOLUTION") && (
+                            <a
+                                href={`#resolution-${resolutionNumber}`}
+                                className="text-sm font-bold text-muted-foreground hover:underline"
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    scrollToResolution(resolutionNumber!);
+                                }}
+                            >
+                                #{resolutionNumber}
+                            </a>
+                        )
+                    }
                 </div>
 
                 {/* Timestamp */}
@@ -149,9 +202,9 @@ function AuditRow({
 
 // Component
 
-export default function ComplaintAudit({ audit, lastResolution, complaintId, caretakerId, complaintStatus }: {
+export default function ComplaintAudit({ audit, lastResolutionStatus, complaintId, caretakerId, complaintStatus }: {
     audit: AuditEntry[],
-    lastResolution: any,
+    lastResolutionStatus: ResolutionStatus,
     complaintId: string,
     caretakerId: string | null,
     complaintStatus: Status
@@ -182,25 +235,13 @@ export default function ComplaintAudit({ audit, lastResolution, complaintId, car
 
     if (!session?.user) return null
 
-    if (initialAudit.length === 0) {
-        return (
-            <h2
-                className="text-sm font-semibold text-foreground"
-            >
-                No activity
-            </h2>
-        )
-    }
-
     return (
         <div>
             {/* Header */}
             <div className="flex items-center gap-2 mb-5">
                 <GitCommitHorizontal className="h-4 w-4 text-muted-foreground" />
-                <h2
-                    className="text-sm font-semibold text-foreground"
-                >
-                    Activity
+                <h2 className="text-sm font-semibold text-foreground">
+                    {initialAudit.length === 0 ? "No activity" : "Activity"}
                 </h2>
                 {initialAudit.length > 0 && (
                     <span className="ml-auto text-xs text-muted-foreground">
@@ -224,6 +265,7 @@ export default function ComplaintAudit({ audit, lastResolution, complaintId, car
                             key={entry.id}
                             entry={entry as AuditEntry}
                             isLast={i === initialAudit.length - 1}
+                            resolutionNumber={entry.resolutionNumber}
                         />
                     ))}
                 </div>
@@ -231,7 +273,7 @@ export default function ComplaintAudit({ audit, lastResolution, complaintId, car
 
             <MarkAsResolved
                 complaintId={complaintId}
-                resolutionStatus={lastResolution?.status as string}
+                resolutionStatus={lastResolutionStatus}
                 complaintStatus={complaintStatus}
                 assignedToId={caretakerId}
                 currentUserId={session.user.id}

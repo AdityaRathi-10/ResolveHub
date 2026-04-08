@@ -3,7 +3,6 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/options"
 import { redirect, notFound } from "next/navigation"
 import Link from "next/link"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import {
     Tooltip,
@@ -14,7 +13,6 @@ import { MediaGallery } from "@/components/MediaGallery"
 import {
     ArrowLeft,
     CalendarClock,
-    ShieldCheck,
     Image as ImageIcon,
     TrendingUp,
 } from "lucide-react"
@@ -30,6 +28,8 @@ import ComplaintAssignTo from "@/components/ComplaintAssignTo"
 import Resolutions from "@/components/Resolutions"
 
 type Priority = "HIGH" | "MEDIUM" | "LOW"
+
+type ResolutionStatus = "PENDING" | "APPROVED" | "REJECTED" | "DISCARDED"
 
 // Configs
 
@@ -98,20 +98,17 @@ export default async function ComplaintDetailPage({
             },
             complaint: {
                 select: { status: true, assignedToId: true }
-            }
+            },
         },
         orderBy: { createdAt: "desc" },
     })
 
-    const lastResolution = await prisma.resolution.findFirst({
+    const lastResolutionStatus = await prisma.resolution.findFirst({
         where: {
             complaintId: complaint.id
         },
         orderBy: {
             createdAt: "desc"
-        },
-        select: {
-            status: true
         }
     })
 
@@ -197,10 +194,7 @@ export default async function ComplaintDetailPage({
                             </div>
 
                             {/* Title */}
-                            <h1
-                                className="text-xl sm:text-2xl font-bold text-foreground leading-snug mb-4"
-
-                            >
+                            <h1 className="text-xl sm:text-2xl font-bold text-foreground leading-snug mb-4">
                                 {complaint.title}
                             </h1>
 
@@ -298,17 +292,19 @@ export default async function ComplaintDetailPage({
                     />
 
                     <Separator className="mb-5" />
-
+                    
+                    {/* Complaint Audit */}
                     <ComplaintAudit
                         complaintId={complaint.id}
                         caretakerId={complaint.assignedToId}
                         audit={audit}
-                        lastResolution={lastResolution}
+                        lastResolutionStatus={lastResolutionStatus?.status as ResolutionStatus}
                         complaintStatus={complaint.status}
                     />
 
                     <Separator className="mb-5" />
 
+                    {/* Comments Section */}
                     <CommentsSection
                         comments={complaint.commentList}
                         complaintId={complaint.id}

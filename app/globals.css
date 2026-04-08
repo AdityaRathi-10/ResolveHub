@@ -156,3 +156,17 @@
     @apply transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5;
   }
 }
+
+.highlight {
+  animation: highlightFade 2s ease forwards;
+  border-radius: 12px;
+}
+
+@keyframes highlightFade {
+  0% { 
+    background-color: rgba(205, 205, 205, 0.4);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
