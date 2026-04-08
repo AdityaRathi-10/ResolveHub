@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { prisma } from "@/lib/prisma"
 import Filters from "@/components/Filters"
+import { parseISO, isValid, startOfDay, endOfDay } from "date-fns"
 
 interface ComplaintsPageProps {
     searchParams: Promise<{
@@ -15,6 +16,8 @@ interface ComplaintsPageProps {
         priority?: string
         sort?: string
         search_query?: string
+        date_from?: string
+        date_to?: string
     }>
 }
 
@@ -35,7 +38,7 @@ function StatPill({
                 <Icon className="h-4 w-4" />
             </div>
             <div>
-                <p className="text-lg font-bold text-foreground leading-none" >
+                <p className="text-lg font-bold text-foreground leading-none">
                     {count}
                 </p>
                 <p className="text-xs text-muted-foreground mt-0.5">{label}</p>
@@ -48,7 +51,7 @@ export default async function ComplaintsPage({ searchParams }: ComplaintsPagePro
     const session = await getServerSession(authOptions)
     if (!session?.user) redirect("/sign-in")
 
-    const { status, priority, sort, search_query } = await searchParams
+    const { status, priority, sort, search_query, date_from, date_to } = await searchParams
     const activeStatus = status ?? "all"
 
     const role = session.user.role as "STUDENT" | "CARETAKER" | "SUPERVISOR"
@@ -62,47 +65,80 @@ export default async function ComplaintsPage({ searchParams }: ComplaintsPagePro
                 select: {
                     commentList: true,
                     resolutions: true,
-                    upvotes: true
-                }
-            }
-        }
+                    upvotes: true,
+                },
+            },
+        },
     })
 
-    // Compute static stats
+    // Compute static stats (always based on full dataset, unaffected by filters)
     const stats = {
         total: allComplaints.length,
-        pending: allComplaints.filter(c => c.status === "PENDING").length,
-        inProgress: allComplaints.filter(c => c.status === "IN_PROGRESS").length,
-        resolved: allComplaints.filter(c => c.status === "RESOLVED" || c.status === "CLOSED").length
+        pending: allComplaints.filter((c) => c.status === "PENDING").length,
+        inProgress: allComplaints.filter((c) => c.status === "IN_PROGRESS").length,
+        resolved: allComplaints.filter(
+            (c) => c.status === "RESOLVED" || c.status === "CLOSED"
+        ).length,
     }
 
-    // Now fetch filtered complaints only for rendering
+    // Build filtered list
     let filteredComplaints = [...allComplaints]
 
+    // Search
     if (search_query) {
-        filteredComplaints = filteredComplaints.filter((c) => c.title.toLowerCase().includes(search_query.toLowerCase()))
+        filteredComplaints = filteredComplaints.filter((c) =>
+            c.title.toLowerCase().includes(search_query.toLowerCase())
+        )
     }
 
+    // Status filter
     if (!status || status === "all") {
-        filteredComplaints = filteredComplaints.filter(c => c.status !== "CLOSED")
+        filteredComplaints = filteredComplaints.filter((c) => c.status !== "CLOSED")
+    } else if (status === "escalated") {
+        filteredComplaints = filteredComplaints.filter((c) => c.isEscalated)
+    } else if (status === "closed") {
+        filteredComplaints = filteredComplaints.filter((c) => c.status === "CLOSED")
+    } else {
+        filteredComplaints = filteredComplaints.filter(
+            (c) => c.status === status.replaceAll(" ", "_").toUpperCase()
+        )
     }
 
-    // Apply status filter
-    if (status && status !== "all") {
-        if (status === "escalated") filteredComplaints = filteredComplaints.filter(c => c.isEscalated)
-        else if (status === "closed") filteredComplaints = filteredComplaints.filter(c => c.status === "CLOSED")
-        else filteredComplaints = filteredComplaints.filter(c => c.status === status.replaceAll(" ", "_").toUpperCase())
+    // Priority filter
+    if (priority && priority !== "all") {
+        filteredComplaints = filteredComplaints.filter(
+            (c) => c.priority === priority.toUpperCase()
+        )
     }
 
-    // Apply priority filter
-    if (priority && priority !== "All") {
-        filteredComplaints = filteredComplaints.filter(c => c.priority === priority.toUpperCase())
+    // Date filter 
+    const parsedFrom = date_from && isValid(parseISO(date_from)) ? parseISO(date_from) : null
+    const parsedTo = date_to && isValid(parseISO(date_to)) ? parseISO(date_to) : null
+
+    if (parsedFrom) {
+        const from = startOfDay(parsedFrom)
+        const to = parsedTo ? endOfDay(parsedTo) : endOfDay(parsedFrom)
+
+        if (!status || status === "all") {
+            filteredComplaints = allComplaints.filter((c) => {
+                if (search_query && !c.title.toLowerCase().includes(search_query.toLowerCase())) return false
+                if (priority && priority !== "all" && c.priority !== priority.toUpperCase()) return false
+                return c.createdAt >= from && c.createdAt <= to
+            })
+        } else {
+            filteredComplaints = filteredComplaints.filter(
+                (c) => c.createdAt >= from && c.createdAt <= to
+            )
+        }
     }
 
-    // Apply sorting
-    if (sort === "newest") filteredComplaints.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
-    else if (sort === "oldest") filteredComplaints.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())
-    else if (sort === "upvotes") filteredComplaints.sort((a, b) => b._count.upvotes - a._count.upvotes)
+    // Sort
+    if (sort === "newest")
+        filteredComplaints.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+    else if (sort === "oldest")
+        filteredComplaints.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())
+    else if (sort === "upvotes")
+        filteredComplaints.sort((a, b) => b._count.upvotes - a._count.upvotes)
 
     return (
         <main className="min-h-screen bg-background">
@@ -115,7 +151,6 @@ export default async function ComplaintsPage({ searchParams }: ComplaintsPagePro
                             Complaints
                         </h1>
                     </div>
-
                     {role === "STUDENT" && (
                         <Button asChild size="sm" className="shrink-0">
                             <Link href="/complaints/new" className="flex items-center gap-2">
@@ -140,7 +175,11 @@ export default async function ComplaintsPage({ searchParams }: ComplaintsPagePro
                 {/* Count */}
                 <div className="flex items-center gap-2 mb-4">
                     <span className="text-sm text-muted-foreground">
-                        Showing <span className="font-medium text-foreground">{filteredComplaints.length}</span> complaints
+                        Showing{" "}
+                        <span className="font-medium text-foreground">
+                            {filteredComplaints.length}
+                        </span>{" "}
+                        complaints
                     </span>
                     <Separator orientation="vertical" className="h-4" />
                     <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
@@ -161,7 +200,7 @@ export default async function ComplaintsPage({ searchParams }: ComplaintsPagePro
                         <div className="h-14 w-14 rounded-2xl bg-muted flex items-center justify-center mb-4">
                             <SlidersHorizontal className="h-6 w-6 text-muted-foreground" />
                         </div>
-                        <h3 className="font-semibold text-foreground mb-1" >
+                        <h3 className="font-semibold text-foreground mb-1">
                             No complaints found
                         </h3>
                         <p className="text-sm text-muted-foreground max-w-xs">
