@@ -2,7 +2,7 @@
 
 import { getComplaintStatus } from "@/app/complaints/[id]/actions/complaint.actions";
 import { supabase } from "@/lib/supabase/client";
-import { CheckCircle2, Clock, Loader2, LucideIcon, XCircle } from "lucide-react"
+import { CheckCircle2, Clock, Loader2, XCircle } from "lucide-react"
 import { useEffect, useState } from "react";
 
 type Status = "PENDING" | "IN_PROGRESS" | "RESOLVED" | "CLOSED"

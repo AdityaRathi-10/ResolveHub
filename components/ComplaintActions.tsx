@@ -1,6 +1,6 @@
 "use client"
 
-import { ReactNode, useState } from "react"
+import { useState } from "react"
 import { useRouter } from "next/navigation"
 import {
     DropdownMenu,
@@ -10,7 +10,7 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button"
-import { MoreHorizontal, Pencil, Trash2, Loader2, AlertCircle, Factory, LucideIcon, EllipsisVertical } from "lucide-react"
+import { MoreHorizontal, Pencil, Trash2, Loader2, AlertCircle, EllipsisVertical } from "lucide-react"
 import { deleteComplaint } from "@/app/complaints/[id]/actions/complaint.actions"
 import { createPortal } from "react-dom"
 

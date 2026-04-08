@@ -7,7 +7,7 @@ import { Separator } from './ui/separator'
 import { CommentBox } from './CommentBox'
 import { useSession } from 'next-auth/react'
 import { redirect } from 'next/navigation'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { createComment, deleteComment, editComment, getComments } from '@/app/complaints/[id]/actions/comment.actions'
 import { supabase } from '@/lib/supabase/client'
 
@@ -34,10 +34,6 @@ export default function CommentsSection({ comments, complaintId }: CommentSectio
     const [currentComments, setCurrentComments] = useState<Comment[]>(comments)
     const { data: session, status } = useSession()
 
-    if (status === "loading") return null
-
-    if (!session?.user) redirect("/sign-in")
-
     useEffect(() => {
         const channel = supabase
             .channel('comments-realtime')
@@ -58,6 +54,10 @@ export default function CommentsSection({ comments, complaintId }: CommentSectio
             supabase.removeChannel(channel)
         }
     })
+
+    if (status === "loading") return null
+
+    if (!session?.user) redirect("/sign-in")
 
     const handleCreateComment = async (description: string) => {
         const tempId = crypto.randomUUID()

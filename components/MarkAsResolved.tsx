@@ -257,7 +257,7 @@ export default function MarkAsResolved({
     const canMarkResolved =
         isCaretaker &&
         (complaintStatus === "IN_PROGRESS" ||
-            resolutionStatus === "REJECTED")
+            resolutionStatus !== "APPROVED")
 
     return (
         <>
