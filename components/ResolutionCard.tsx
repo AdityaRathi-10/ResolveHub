@@ -32,6 +32,7 @@ type ResolutionStatus = "PENDING" | "APPROVED" | "REJECTED" | "DISCARDED"
 export interface ResolutionCardProps {
     resolution: {
         id: string
+        number: number
         description?: string | null
         media: string[]
         status: ResolutionStatus
@@ -40,7 +41,6 @@ export interface ResolutionCardProps {
         createdAt: Date
         caretaker: { name: string; email: string }
     }
-    attemptIndex: number
     total: number
     canReview?: boolean
     complaintId: string
@@ -256,7 +256,6 @@ function DisapproveModal({
 
 export function ResolutionCard({
     resolution,
-    attemptIndex,
     total,
     canReview = false,
     complaintId,
@@ -265,7 +264,7 @@ export function ResolutionCard({
 }: ResolutionCardProps) {
     const config = STATUS_CONFIG[resolution.status]
     const StatusIcon = config.icon
-    const isLatest = total - attemptIndex + 1 === total
+    const isLatest = total === resolution.number
 
     const [action, setAction] = useState<"approve" | "disapprove" | "done" | null>(null)
     const [disapproveOpen, setDisapproveOpen] = useState(false)
@@ -316,7 +315,7 @@ export function ResolutionCard({
     }
 
     return (
-        <>
+        <div id={`resolution-${resolution.number}`}>
             <Accordion
                 key={resolution.status}
                 type="single"
@@ -333,7 +332,7 @@ export function ResolutionCard({
                             <div className="flex items-center gap-2.5 min-w-0">
                                 <span className={`h-2 w-2 rounded-full shrink-0 ${config.dot}`} />
                                 <span className="text-xs font-semibold text-muted-foreground shrink-0 tabular-nums">
-                                    #{total - attemptIndex + 1}
+                                    #{resolution.number}
                                     
                                 </span>
                                 <span className="text-sm text-foreground truncate">
@@ -471,6 +470,6 @@ export function ResolutionCard({
                     onDisapproveComplete={() => setAction("done")}
                 />
             )}
-        </>
+        </div>
     )
 }

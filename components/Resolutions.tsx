@@ -17,6 +17,7 @@ type Resolution = {
     status: ResolutionStatus
     rejectionReason?: string | null
     rejectedAt?: Date | null
+    number: number
     createdAt: Date
     caretaker: { name: string; email: string }
 }
@@ -55,7 +56,7 @@ export default function Resolutions({ initialResolutions, complaintId, authorId,
 
     if (!session?.user) return null
 
-    if(resolutions?.length === 0) {
+    if (resolutions?.length === 0) {
         return null
     }
 
@@ -76,7 +77,6 @@ export default function Resolutions({ initialResolutions, complaintId, authorId,
                         <ResolutionCard
                             key={res.id}
                             resolution={res}
-                            attemptIndex={index + 1}
                             total={resolutions.length}
                             canReview={
                                 session.user.role === "STUDENT" &&
