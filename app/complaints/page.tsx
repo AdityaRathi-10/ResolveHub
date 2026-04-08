@@ -14,6 +14,7 @@ interface ComplaintsPageProps {
         status?: string
         priority?: string
         sort?: string
+        search_query?: string
     }>
 }
 
@@ -47,7 +48,7 @@ export default async function ComplaintsPage({ searchParams }: ComplaintsPagePro
     const session = await getServerSession(authOptions)
     if (!session?.user) redirect("/sign-in")
 
-    const { status, priority, sort } = await searchParams
+    const { status, priority, sort, search_query } = await searchParams
     const activeStatus = status ?? "all"
 
     const role = session.user.role as "STUDENT" | "CARETAKER" | "SUPERVISOR"
@@ -78,7 +79,11 @@ export default async function ComplaintsPage({ searchParams }: ComplaintsPagePro
     // Now fetch filtered complaints only for rendering
     let filteredComplaints = [...allComplaints]
 
-    if(!status || status === "all") {
+    if (search_query) {
+        filteredComplaints = filteredComplaints.filter((c) => c.title.toLowerCase().includes(search_query.toLowerCase()))
+    }
+
+    if (!status || status === "all") {
         filteredComplaints = filteredComplaints.filter(c => c.status !== "CLOSED")
     }
 

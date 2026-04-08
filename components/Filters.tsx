@@ -10,11 +10,32 @@ import {
 } from "@/components/ui/select"
 import { useSession } from "next-auth/react"
 import { Button } from "./ui/button"
+import { Input } from "./ui/input"
+import { useEffect, useState } from "react"
+import { useDebounceValue } from "usehooks-ts"
+import { Search } from "lucide-react"
 
 export default function Filters({ activeStatus }: { activeStatus: string }) {
+    const [searchInput, setSearchInput] = useState("")
+    const [debouncedSearchInput] = useDebounceValue(searchInput, 300)
     const router = useRouter()
     const searchParams = useSearchParams()
     const { data: session } = useSession()
+
+    useEffect(() => {
+        const params = new URLSearchParams(searchParams.toString())
+        const current = params.get("search_query") || ""
+        if (current === debouncedSearchInput) return
+
+        if (!debouncedSearchInput) {
+            params.delete("search_query")
+        }
+        else {
+            params.set("search_query", debouncedSearchInput)
+        }
+        router.push(`/complaints?${params.toString()}`)
+    }, [debouncedSearchInput])
+
     function updateParam(key: string, value: string) {
         const params = new URLSearchParams(searchParams.toString())
         if (value === "all") {
@@ -33,12 +54,10 @@ export default function Filters({ activeStatus }: { activeStatus: string }) {
         { label: "Closed", value: "closed" }
     ]
 
-
     const tabs = session?.user.role === "SUPERVISOR" ? [...baseTabs, { label: "Escalated", value: "escalated" }] : baseTabs
 
     return (
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mb-5">
-
             {/* Status Tabs */}
             <div className="flex items-center gap-1 bg-muted/50 rounded-xl border border-border flex-wrap">
                 {tabs.map(({ label, value }) => (
@@ -58,6 +77,18 @@ export default function Filters({ activeStatus }: { activeStatus: string }) {
 
             {/* Select Filters */}
             <div className="flex items-center gap-2 sm:ml-auto">
+                {/* Search */}
+                <div className="relative w-full">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input
+                        type="text"
+                        placeholder="Search complaints..."
+                        value={searchInput}
+                        onChange={(e) => setSearchInput(e.target.value)}
+                        className="pl-9"
+                    />
+                </div>
+
                 {/* Priority */}
                 <Select
                     onValueChange={(value) => updateParam("priority", value)}
