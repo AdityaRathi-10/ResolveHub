@@ -41,6 +41,8 @@ enum COMPLAINT_AUDIT {
   STATUS_CHANGED
   ESCALATED
   RESOLUTION_SUBMITTED
+  RESOLUTION_APPROVED
+  RESOLUTION_REJECTED
   REOPENED
 }
 
@@ -100,6 +102,7 @@ model Comment {
 
 model Resolution {
   id              String            @id @default(cuid())
+  number          Int
   description     String?
   media           String[]          @default([])
   complaintId     String
@@ -125,12 +128,13 @@ model Upvotes {
 }
 
 model ComplaintAudit {
-  id          String          @id @default(cuid())
-  complaintId String
-  complaint   Complaint       @relation(fields: [complaintId], references: [id])
-  actorId     String
-  actor       User            @relation(fields: [actorId], references: [id])
-  type        COMPLAINT_AUDIT
-  message     String
-  createdAt   DateTime        @default(now())
+  id               String          @id @default(cuid())
+  type             COMPLAINT_AUDIT
+  message          String
+  complaintId      String
+  complaint        Complaint       @relation(fields: [complaintId], references: [id])
+  actorId          String
+  actor            User            @relation(fields: [actorId], references: [id])
+  resolutionNumber Int?
+  createdAt        DateTime        @default(now())
 }
