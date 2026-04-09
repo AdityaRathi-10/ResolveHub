@@ -47,6 +47,7 @@ export async function editComplaintAction(
       description,
       media,
       priority,
+      isEdited: true,
       deadline: newDeadline,
     },
   });

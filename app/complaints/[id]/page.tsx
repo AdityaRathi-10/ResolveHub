@@ -112,11 +112,9 @@ export default async function ComplaintDetailPage({
         }
     })
 
-
     const priority = PRIORITY_CONFIG[complaint.priority]
     const isLikedByUser = Boolean(complaint.upvotes.find((upvote) => upvote.userId === session.user.id))
 
-    const isEdited = complaint.updatedAt > complaint.createdAt
     const isOwner = session.user.id === complaint.userId
     const canEdit = isOwner && complaint.status === "PENDING"
 
@@ -186,7 +184,7 @@ export default async function ComplaintDetailPage({
                                     <span className={`h-1.5 w-1.5 rounded-full ${priority.dot}`} />
                                     {priority.label}
                                 </span>
-                                {isEdited && (
+                                {complaint.isEdited && (
                                     <span className="text-sm text-muted-foreground">
                                         (Edited)
                                     </span>

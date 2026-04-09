@@ -77,6 +77,7 @@ model Complaint {
   assignedTo   User?            @relation("AssignedComplaints", fields: [assignedToId], references: [id])
   deadline     DateTime?
   isEscalated  Boolean          @default(false)
+  isEdited     Boolean          @default(false)
   upvotes      Upvotes[]
   commentList  Comment[]
   resolutions  Resolution[]
