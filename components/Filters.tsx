@@ -51,7 +51,7 @@ export default function Filters({ activeStatus }: { activeStatus: string }) {
         if (!debouncedSearchInput) params.delete("search_query")
         else params.set("search_query", debouncedSearchInput)
         router.push(`/complaints?${params.toString()}`)
-    }, [debouncedSearchInput])
+    }, [debouncedSearchInput, router, searchParams])
 
     // Helpers
     function updateParam(key: string, value: string) {

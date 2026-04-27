@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { createPortal } from "react-dom"
 import { MediaGallery } from "@/components/MediaGallery"
 import {
@@ -267,18 +267,11 @@ export function ResolutionCard({
     const isLatest = total === resolution.number
 
     const [action, setAction] = useState<"approve" | "disapprove" | "done" | null>(null)
-    const [disapproveOpen, setDisapproveOpen] = useState(false)
 
-    const isActing = action === "approve" || action === "disapprove"
+    const isDisapproving = action === "disapprove" && resolution.status === "PENDING"
+    const isActing = action === "approve" || isDisapproving
     const isDone = action === "done"
 
-    // Auto‑close the modal when the resolution is no longer PENDING (after revalidation)
-    useEffect(() => {
-        if (disapproveOpen && resolution.status !== "PENDING") {
-            setDisapproveOpen(false)
-            setAction(null) // reset action state as well
-        }
-    }, [disapproveOpen, resolution.status])
 
     const caretakerInitials = resolution.caretaker.name
         .split(" ")
@@ -304,13 +297,12 @@ export function ResolutionCard({
 
     const handleDisapproveOpen = () => {
         if (isActing || isDone) return
-        setDisapproveOpen(true)
+        setAction("disapprove")
     }
 
     const handleDisapproveClose = () => {
-        // Only close if not in the middle of submitting (action is not "disapprove")
-        if (action !== "disapprove") {
-            setDisapproveOpen(false)
+        if (action !== "disapprove" || resolution.status !== "PENDING") {
+            setAction(null)
         }
     }
 
@@ -460,7 +452,7 @@ export function ResolutionCard({
                 </AccordionItem>
             </Accordion>
 
-            {disapproveOpen && (
+            {isDisapproving && (
                 <DisapproveModal
                     complaintId={complaintId}
                     studentId={studentId}

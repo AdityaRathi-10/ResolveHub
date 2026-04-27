@@ -73,7 +73,7 @@ export default function Resolutions({ initialResolutions, complaintId, authorId,
             </div>
             <div className="space-y-3">
                 {
-                    resolutions?.map((res, index) => (
+                    resolutions?.map((res) => (
                         <ResolutionCard
                             key={res.id}
                             resolution={res}
